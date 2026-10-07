@@ -158,7 +158,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--paper);outline-
           <li><b>S</b><span>Esquivar hacia atrás</span></li>
           <li><b>W</b><span>Cubrirte (mantené apretado)</span></li>
         </ul>
-        <p class="note">5 vidas. Entre cachetada y cachetada esperá 0,5 s: si te apurás, perdés una vida. Si te pegan 5 veces en la guardia, te la rompen y perdés una vida.</p>
+        <p class="note">5 vidas. Cada mano tarda 0,5 s en recargar entre cachetadas. Si te pegan 5 veces en la guardia, te la rompen y perdés una vida.</p>
       </div>
       <div class="stack">
         <span class="lab">Elegí tu peleador</span>
@@ -268,7 +268,7 @@ const st = {
   phase: 'menu', mode: null, code: '', name: '', ch: 'a',
   round: 0, rf: 0,
   hp: LIVES, bb: 0, guardHeld: false, dodgeUntil: 0, dodgeCdUntil: 0,
-  lastSlapAt: -1e9, penaltyLock: 0, atkN: 0, mySlaps: [], incoming: [],
+  lastSlapAt: -1e9, penaltyLock: 0, bufT: 0, preds: {}, atkN: 0, mySlaps: [], incoming: [],
   opp: { present: false, peer: null, ch: 'a', name: 'Rival', hp: LIVES, bb: 0, g: false, d: false, rf: 0, rd: 0, a: null, s: null },
   lastOppAtkN: 0, lastOppResN: 0,
   countdownEnd: 0, result: null, joinedAt: 0, connected: false,
@@ -457,7 +457,7 @@ function ready() {
 function startRound(R) {
   const now = performance.now();
   st.round = R; st.hp = LIVES; st.bb = 0; st.incoming = []; st.mySlaps = []; st.oppCheek = [0, 0];
-  st.result = null; st.dodgeUntil = 0; st.dodgeCdUntil = 0; st.penaltyLock = 0; st.lastSlapAt = -1e9; st.floaters = [];
+  st.result = null; st.dodgeUntil = 0; st.dodgeCdUntil = 0; st.penaltyLock = 0; st.lastSlapAt = -1e9; st.floaters = []; st.preds = {}; clearTimeout(st.bufT);
   st.phase = 'countdown'; st.countdownEnd = now + COUNT_MS;
   st.opp.hp = LIVES; st.opp.bb = 0;
   if (st.opp.a) st.lastOppAtkN = Math.max(st.lastOppAtkN, num(st.opp.a.n, 0));
@@ -470,7 +470,7 @@ function startRound(R) {
 
 function endRound(won) {
   if (st.phase === 'over') return;
-  st.phase = 'over'; st.result = won; setGuard(false);
+  st.phase = 'over'; st.result = won; setGuard(false); clearTimeout(st.bufT);
   pub({ g: 0, d: 0 });
   floater('K.O.', innerWidth / 2, innerHeight * 0.3, won ? C.ember : C.slap, 2.2);
   if (won) sfx.slap(); else sfx.hurt();
@@ -490,15 +490,29 @@ function trySlap(hand) {
   audio();
   if (!inPlay()) return;
   const now = performance.now();
-  if (now < st.penaltyLock) return;
   if (st.guardHeld || now < st.dodgeUntil) return;
-  if (now - st.lastSlapAt < COOLDOWN) { penalty(now); return; }
+  // Si todavía se está recargando, el golpe queda en espera y sale solo cuando termina la recarga.
+  clearTimeout(st.bufT);
+  const left = COOLDOWN - (now - st.lastSlapAt);
+  if (left > 0) { st.bufT = setTimeout(() => trySlap(hand), left + 2); return; }
   st.lastSlapAt = now; st.atkN++;
   const sl = { hand, t0: now, n: st.atkN };
   st.mySlaps.push(sl);
   sfx.whoosh();
-  if (st.mode === 'online') { const m = { n: st.atkN, h: hand, r: st.round }; send('atk', m); pub({ a: m }); }
+  if (st.mode === 'online') {
+    const m = { n: st.atkN, h: hand, r: st.round }; send('atk', m); pub({ a: m });
+    setTimeout(() => predict(sl, m.r), WINDUP);
+  }
   else setTimeout(() => botResolve(sl), WINDUP);
+}
+
+// Online la respuesta del rival tarda en volver: el golpe se muestra ya, según lo último que se sabe de él,
+// y se corrige si su respuesta dice otra cosa. Las vidas siempre las decide el que recibe.
+function predict(sl, round) {
+  if (st.phase !== 'fight' || st.round !== round || sl.resT != null) return;
+  const r = st.opp.d ? 'dodge' : st.opp.g ? 'block' : 'hit';
+  st.preds[sl.n] = { r, hand: sl.hand };
+  showMyResult(sl.n, r, sl.hand);
 }
 
 function penalty(now) {
@@ -550,9 +564,19 @@ function hurtMe(side) {
 }
 
 function onMyResult(n, r) {
+  const p = st.preds[n];
+  if (!p) { showMyResult(n, r); return; }
+  delete st.preds[n];
+  const landed = x => x === 'hit' || x === 'break';
+  if (p.r === r) return;
+  if (landed(p.r) && !landed(r)) { const i = p.hand === 'L' ? 0 : 1; st.oppCheek[i] = Math.max(0, st.oppCheek[i] - 0.4); }
+  showMyResult(n, r, p.hand);
+}
+function showMyResult(n, r, hand) {
   const sl = st.mySlaps.find(s => s.n === n);
-  if (sl) sl.resT = performance.now() - sl.t0;
-  const idx = sl ? (sl.hand === 'L' ? 0 : 1) : (Math.random() < .5 ? 0 : 1);
+  if (sl && sl.resT == null) sl.resT = performance.now() - sl.t0;
+  const h = hand || (sl && sl.hand);
+  const idx = h ? (h === 'L' ? 0 : 1) : (Math.random() < .5 ? 0 : 1);
   const W = innerWidth, H = innerHeight, u = unit();
   const x = W / 2 + (idx === 0 ? -1 : 1) * 14 * u;
   if (r === 'hit' || r === 'break') {
