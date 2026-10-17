@@ -158,7 +158,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--paper);outline-
           <li><b>S</b><span>Esquivar hacia atrás</span></li>
           <li><b>W</b><span>Cubrirte (mantené apretado)</span></li>
         </ul>
-        <p class="note">5 vidas. Cada mano tarda 0,5 s en recargar entre cachetadas. Si te pegan 5 veces en la guardia, te la rompen y perdés una vida.</p>
+        <p class="note">5 vidas. Pegás de a dos cachetadas seguidas y después descansás 3 s sin poder pegar. Si te pegan 5 veces en la guardia, te la rompen y perdés una vida.</p>
       </div>
       <div class="stack">
         <span class="lab">Elegí tu peleador</span>
@@ -246,7 +246,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--paper);outline-
 (() => {
 'use strict';
 /* ---------------- constants ---------------- */
-const LIVES = 5, WINDUP = 300, HOLD_MAX = 250, COOLDOWN = 500, DODGE_MS = 450, DODGE_CD = 950, BLOCK_BREAK = 5, RETURN_MS = 150, COUNT_MS = 3000;
+const LIVES = 5, WINDUP = 300, HOLD_MAX = 250, COOLDOWN = 500, GAP = 250, COMBO_WINDOW = 1000, REST = 3000, DODGE_MS = 450, DODGE_CD = 950, BLOCK_BREAK = 5, RETURN_MS = 150, COUNT_MS = 3000;
 const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const $ = id => document.getElementById(id);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -268,7 +268,7 @@ const st = {
   phase: 'menu', mode: null, code: '', name: '', ch: 'a',
   round: 0, rf: 0,
   hp: LIVES, bb: 0, guardHeld: false, dodgeUntil: 0, dodgeCdUntil: 0,
-  lastSlapAt: -1e9, penaltyLock: 0, bufT: 0, preds: {}, atkN: 0, mySlaps: [], incoming: [],
+  lastSlapAt: -1e9, comboN: 0, restFrom: 0, restUntil: 0, penaltyLock: 0, bufT: 0, preds: {}, atkN: 0, mySlaps: [], incoming: [],
   opp: { present: false, peer: null, ch: 'a', name: 'Rival', hp: LIVES, bb: 0, g: false, d: false, rf: 0, rd: 0, a: null, s: null },
   lastOppAtkN: 0, lastOppResN: 0,
   countdownEnd: 0, result: null, joinedAt: 0, connected: false,
@@ -457,7 +457,7 @@ function ready() {
 function startRound(R) {
   const now = performance.now();
   st.round = R; st.hp = LIVES; st.bb = 0; st.incoming = []; st.mySlaps = []; st.oppCheek = [0, 0];
-  st.result = null; st.dodgeUntil = 0; st.dodgeCdUntil = 0; st.penaltyLock = 0; st.lastSlapAt = -1e9; st.floaters = []; st.preds = {}; clearTimeout(st.bufT);
+  st.result = null; st.dodgeUntil = 0; st.dodgeCdUntil = 0; st.penaltyLock = 0; st.lastSlapAt = -1e9; st.floaters = []; st.preds = {}; clearTimeout(st.bufT); st.comboN = 0; st.restFrom = 0; st.restUntil = 0;
   st.phase = 'countdown'; st.countdownEnd = now + COUNT_MS;
   st.opp.hp = LIVES; st.opp.bb = 0;
   if (st.opp.a) st.lastOppAtkN = Math.max(st.lastOppAtkN, num(st.opp.a.n, 0));
@@ -491,11 +491,15 @@ function trySlap(hand) {
   if (!inPlay()) return;
   const now = performance.now();
   if (st.guardHeld || now < st.dodgeUntil) return;
-  // Si todavía se está recargando, el golpe queda en espera y sale solo cuando termina la recarga.
+  // Tanda de dos cachetadas y después 3 s de descanso sin poder pegar.
+  comboState(now);
+  if (now < st.restUntil) return;
   clearTimeout(st.bufT);
-  const left = COOLDOWN - (now - st.lastSlapAt);
-  if (left > 0) { st.bufT = setTimeout(() => trySlap(hand), left + 2); return; }
+  const left = GAP - (now - st.lastSlapAt);
+  if (st.comboN === 1 && left > 0) { st.bufT = setTimeout(() => trySlap(hand), left + 2); return; }
   st.lastSlapAt = now; st.atkN++;
+  st.comboN++;
+  if (st.comboN >= 2) { st.comboN = 0; st.restFrom = now; st.restUntil = now + REST; }
   const sl = { hand, t0: now, n: st.atkN };
   st.mySlaps.push(sl);
   sfx.whoosh();
@@ -508,6 +512,12 @@ function trySlap(hand) {
 
 // Online la respuesta del rival tarda en volver: el golpe se muestra ya, según lo último que se sabe de él,
 // y se corrige si su respuesta dice otra cosa. Las vidas siempre las decide el que recibe.
+// Si después de la primera cachetada no tirás la segunda a tiempo, el descanso arranca igual.
+function comboState(now) {
+  if (st.comboN === 1 && now - st.lastSlapAt > COMBO_WINDOW) {
+    st.comboN = 0; st.restFrom = st.lastSlapAt + COMBO_WINDOW; st.restUntil = st.restFrom + REST;
+  }
+}
 function predict(sl, round) {
   if (st.phase !== 'fight' || st.round !== round || sl.resT != null) return;
   const r = st.opp.d ? 'dodge' : st.opp.g ? 'block' : 'hit';
@@ -609,7 +619,9 @@ function botTick(now) {
     else if (roll < 0.6 && now > bot.dCd) setTimeout(() => { const t = performance.now(); bot.dUntil = t + DODGE_MS; bot.dCd = t + DODGE_CD; }, delay);
   }
   if (now > bot.nextAtk && !bot.g && now > bot.dUntil) {
-    bot.nextAtk = now + 750 + Math.random() * 1350;
+    bot.combo = (bot.combo || 0) + 1;
+    if (bot.combo >= 2) { bot.combo = 0; bot.nextAtk = now + REST + Math.random() * 1200; }
+    else bot.nextAtk = now + GAP + 30 + Math.random() * 300;
     receiveAttack(Math.random() < .5 ? 'L' : 'R', ++bot.n);
   }
   syncBotView(now);
@@ -1111,7 +1123,8 @@ function updateUI(now) {
       gbar($('hMeBb'), st.bb); gbar($('hOppBb'), st.opp.bb);
       $('hRound').textContent = 'Ronda ' + st.round + (st.mode === 'online' ? ' · Sala ' + st.code : ' · Práctica');
     }
-    const cd = clamp((now - st.lastSlapAt) / COOLDOWN, 0, 1).toFixed(2);
+    comboState(now);
+    const cd = (now < st.restUntil ? clamp((now - st.restFrom) / (st.restUntil - st.restFrom), 0, 1) : 1).toFixed(2);
     const cool = cd < 1 || st.guardHeld || now < st.dodgeUntil, dcool = now < st.dodgeCdUntil;
     const pk = cd + (cool ? 'c' : '') + (dcool ? 'd' : '');
     if (pk !== padKey) {
