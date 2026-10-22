@@ -131,6 +131,24 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--paper);outline-
 .hist b{color:var(--paper);font-weight:700}
 #tLive{width:100%}
 
+/* chests + fighter info */
+.chests{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chest{border:1px solid var(--line);padding:10px;display:grid;gap:6px;justify-items:start;min-width:0}
+.chest b{font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:.03em}
+.chest small{color:var(--muted);font-weight:600}
+.chest .btn{padding:7px 14px;font-size:16px}
+.chest .box{display:block;width:46px;height:34px;background:linear-gradient(#8a5a2a 0 40%,#5a3618 40%);border:2px solid #d4a017;border-radius:6px 6px 2px 2px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)}
+.chest.epic{border-color:#8e5ad0}
+.chest.epic .box{background:linear-gradient(#5b2f8f 0 40%,#3a1a63 40%);border-color:#cfa6ff;box-shadow:0 0 16px rgba(160,100,255,.5)}
+.opened{border:1px solid var(--slap);background:color-mix(in srgb,var(--slap) 12%,transparent);padding:10px;display:grid;gap:4px}
+.opened b{font-family:var(--display);font-weight:400;font-size:20px}
+.opened.pop{animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.8);opacity:0}}
+.fighter.create canvas{filter:grayscale(1) brightness(.5)}
+.fighter.create span{color:var(--paper)}
+#cOpts .gl button{padding:6px 9px}
+@media (prefers-reduced-motion:reduce){.opened.pop{animation:none}}
+
 /* code tiles */
 .tiles{display:flex;gap:8px;justify-content:center}
 .tiles span{font:400 clamp(36px,9vw,54px)/1 var(--display);width:1.25em;padding-block:10px;text-align:center;background:#000;color:var(--paper);border:1px solid var(--slap);text-shadow:0 0 18px var(--slap)}
@@ -195,7 +213,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--paper);outline-
 .ebar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3fb6f0,#bdeeff)}
 .ebar.full i{box-shadow:0 0 10px #6fd0ff}
 .side.opp .ebar{justify-self:end}
-#pad2{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;padding-inline:16px;pointer-events:none;z-index:5}
+#pad2{position:fixed;left:0;right:0;top:63%;transform:translateY(-50%);display:flex;justify-content:space-between;padding-inline:16px;pointer-events:none;z-index:5}
 #pad2 .pbtn{pointer-events:auto}
 .pow{--en:0;width:clamp(62px,11vmin + 12px,92px);aspect-ratio:1;border-radius:50%;background:conic-gradient(#3fb6f0 calc(var(--en) * 360deg),color-mix(in srgb,var(--paper) 14%,transparent) 0)}
 .pow::before{content:"";position:absolute;inset:4px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#13202a,var(--ink))}
@@ -231,14 +249,14 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--paper);outline-
           <li><b>S</b><span>Esquivar hacia atrás</span></li>
           <li><b>W</b><span>Cubrirte (mantené apretado). Si te cubrís justo antes del golpe, contragolpeás: el rival queda aturdido y tu próxima cachetada saca 2.</span></li>
           <li><b>Q</b><span>Poder especial de tu personaje, con la barra de energía llena</span></li>
-          <li><b>E</b><span>Remate: cuando al rival le queda una vida y tenés media barra</span></li>
+          <li><b>E</b><span>Remate: después del K.O., si tenés media barra. El que perdió lo bloquea cubriéndose justo cuando el aro llega al centro.</span></li>
         </ul>
         <p class="note">Normalmente: 5 vidas, tandas de dos cachetadas y 3 s de descanso, y la guardia se rompe a los 5 golpes. Cada personaje tiene un poder que cambia alguna de estas reglas.</p>
       </div>
       <div class="stack">
         <span class="lab">Elegí tu peleador</span>
         <div class="pick" id="pick"></div>
-        <p class="note" id="pickPow"></p>
+        <div class="finfo stack" id="fInfo"></div>
         <label for="nameIn">Tu nombre</label>
         <input id="nameIn" maxlength="12" placeholder="Jugador" autocomplete="off">
         <button class="btn hot wide" id="bCreate">Crear sala</button>
@@ -316,20 +334,45 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--paper);outline-
         <h2 class="title" style="font-size:clamp(34px,5vw,50px)">PASE DE <em>BATALLA</em></h2>
         <div class="lvl"><strong id="pLvl">0</strong><span id="pXpTxt">0 / 100 XP</span></div>
         <div class="bar"><i id="pBar"></i></div>
-        <p class="note">Cada pelea suma XP: 100 por ganar online y 40 por perder, 50 por cada pelea ganada en el torneo contra la máquina y 30 por ganarle en práctica. Cada 100 XP subís un nivel.</p>
+        <p class="note">Cada pelea suma XP: 100 por ganar online y 40 por perder, 50 por cada pelea ganada en el torneo contra la máquina, 30 por ganarle en práctica y 50 extra por cada remate. Cada 100 XP subís un nivel.</p>
+        <span class="lab">Cofres</span>
+        <div class="chests" id="pChests"></div>
+        <div class="opened" id="pOpen" hidden></div>
         <span class="lab">Desafíos</span>
         <ul class="chal" id="pChal"></ul>
-        <span class="lab">Tus guantes</span>
-        <div class="gl" id="pGloves"></div>
-        <span class="lab">Tu gorro</span>
-        <div class="gl" id="pHats"></div>
       </div>
       <div class="stack">
         <span class="lab">Recompensas por nivel</span>
         <ol class="track" id="pTrack"></ol>
+        <span class="lab">Tus guantes</span>
+        <div class="gl" id="pGloves"></div>
+        <span class="lab">Tu gorro</span>
+        <div class="gl" id="pHats"></div>
+        <span class="lab" id="pShirtLab">Tu camiseta</span>
+        <div class="gl" id="pShirts"></div>
       </div>
     </div>
     <button class="btn ghost wide" id="bPassBack">Volver</button>
+  </div>
+</section>
+
+<!-- CHARACTER CREATOR -->
+<section class="screen" id="create" hidden>
+  <div class="card">
+    <div class="split">
+      <div class="stack" style="justify-items:center;align-content:start">
+        <div class="kicker">Creá tu peleador</div>
+        <canvas id="cPrev" aria-label="Vista previa del peleador" style="display:block;width:100%;max-width:240px;aspect-ratio:240/260;height:auto;border:1px solid var(--line)"></canvas>
+        <label for="cName" style="justify-self:start">Nombre</label>
+        <input id="cName" maxlength="12" placeholder="MI PELEADOR" autocomplete="off">
+        <p class="note" id="cDesc"></p>
+      </div>
+      <div class="stack" id="cOpts"></div>
+    </div>
+    <div class="row">
+      <button class="btn hot" id="bCSave" style="flex:1 1 180px">Guardar personaje</button>
+      <button class="btn ghost" id="bCBack" style="flex:1 1 120px">Volver</button>
+    </div>
   </div>
 </section>
 
@@ -373,7 +416,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--paper);outline-
 'use strict';
 /* ---------------- constants ---------------- */
 const LIVES = 5, WINDUP = 300, HOLD_MAX = 250, COOLDOWN = 500, GAP = 250, COMBO_WINDOW = 1000, REST = 3000, DODGE_MS = 450, DODGE_CD = 950, BLOCK_BREAK = 5, RETURN_MS = 150, COUNT_MS = 3000;
-const PARRY_MS = 200, COUNTER_MS = 700, EN_MAX = 100, FIN_COST = 50, STUN_PARRY = 1000, STUN_SPEC = 2000;
+const PARRY_MS = 200, COUNTER_MS = 700, EN_MAX = 100, FIN_COST = 50, STUN_PARRY = 1000, STUN_SPEC = 1500, KO_MS = 3200, FIN_WIN = 320;
 const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const $ = id => document.getElementById(id);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -403,7 +446,7 @@ const st = {
   floaters: [], portraitOk: false,
   peers: [], myId: null, hostId: null, isHost: false, hostSeen: null, T: null, rosterKey: '', rosterN: 0, selMode: '', rv: 0, doneSeen: {}, hostNext: 0,
   kickN: 0, drainN: 0, lastRegen: 0, lastHeal: 0,
-  en: 0, stunUntil: 0, oppStunUntil: 0, guardAt: 0, counterUntil: 0, smokeN: 0, shieldUntil: 0, spOf: {}, fx: [], myBonus: 0, oppBonus: 0
+  en: 0, armor: 0, revived: false, finUsed: false, koUntil: 0, opCuKey: '', stunUntil: 0, oppStunUntil: 0, guardAt: 0, counterUntil: 0, smokeN: 0, shieldUntil: 0, spOf: {}, fx: [], myBonus: 0, oppBonus: 0
 };
 const bot = { hp: LIVES, bb: 0, g: false, gUntil: 0, dUntil: 0, dCd: 0, nextAtk: 0, n: 0, kn: 0, combo: 0, en: 0, stunUntil: 0, smokeN: 0, shieldUntil: 0 };
 let oppDV = 0, oppGV = 0, myDV = 0, myGV = 0;
@@ -475,7 +518,7 @@ function send(topic, data) {
 }
 function gotAtk(a) {
   if (!a || typeof a !== 'object') return;
-  if (a.r === st.round && num(a.n, 0) > st.lastOppAtkN && (st.phase === 'fight' || st.phase === 'countdown')) {
+  if (a.r === st.round && num(a.n, 0) > st.lastOppAtkN && (st.phase === 'fight' || st.phase === 'countdown' || (st.phase === 'ko' && a.sp === 'finish'))) {
     st.lastOppAtkN = a.n; receiveAttack(a.h === 'R' ? 'R' : 'L', a.n, a);
   }
 }
@@ -510,7 +553,7 @@ async function joinRoom(code) {
   roomUnsubs.push(gameRoom.on('atk', m => { if (!m.isMe && m.peer === st.opp.peer) gotAtk(m.data); }, () => {}));
   roomUnsubs.push(gameRoom.on('res', m => { if (!m.isMe && m.peer === st.opp.peer) gotRes(m.data); }, () => {}));
   roomUnsubs.push(gameRoom.onConnection(c => { st.connected = c; $('wDot').classList.toggle('ok', c); }, () => {}));
-  pub({ nm: st.name || 'Jugador', ch: st.ch, gl: prog.gl, ht: prog.hat, tt: myTitle(), j: Date.now(), rf: 0, rd: 0, rv: 0, hp: maxHp(st.ch), bb: 0, g: 0, d: 0, a: null, s: null, T: null });
+  pub({ nm: st.name || 'Jugador', ch: st.ch, cu: st.ch === 'custom' ? prog.custom : null, gl: prog.gl, ht: prog.hat, sh: prog.sh, sk: mySkin(), tt: myTitle(), j: Date.now(), rf: 0, rd: 0, rv: 0, hp: maxHp(st.ch), bb: 0, g: 0, d: 0, a: null, s: null, T: null });
   st.phase = 'waiting';
   showScreen('wait'); renderWait();
 }
@@ -525,7 +568,7 @@ function lostRoom() {
   leaveRoom(); toMenu(); toast('Se cortó la conexión con la sala.');
 }
 function resetOpp() {
-  Object.assign(st.opp, { present: false, peer: null, ch: 'a', gl: '', ht: '', tt: '', rv: 0, en: 0, name: 'Rival', hp: LIVES, bb: 0, g: false, d: false, rf: 0, rd: 0, a: null, s: null });
+  Object.assign(st.opp, { present: false, peer: null, ch: 'a', gl: '', ht: '', sh: '', sk: '', tt: '', rv: 0, en: 0, name: 'Rival', hp: LIVES, bb: 0, g: false, d: false, rf: 0, rd: 0, a: null, s: null });
   st.lastOppAtkN = 0; st.lastOppResN = 0;
 }
 
@@ -614,7 +657,8 @@ function startTournament(mode) {
   const ids = shuffle(pl.map(p => p.id));
   const base = Math.max(st.round, ...pl.map(p => Math.max(num(p.P.rd, 0), num(p.P.rf, 0)))) + 1;
   const T = { id: Math.floor(Math.random() * 1e9), mode, pl: ids, nm: {}, ch: {}, m: [], cur: [], rd: 0, done: 0, win: null, q: base };
-  pl.forEach(p => { T.nm[p.id] = p.me ? (st.name || 'Jugador') : cleanName(p.P.nm); T.ch[p.id] = p.me ? st.ch : (FIGHTERS[p.P.ch] ? p.P.ch : 'a'); });
+  T.nk = {};
+  pl.forEach(p => { T.nm[p.id] = p.me ? (st.name || 'Jugador') : cleanName(p.P.nm); const c = p.me ? st.ch : p.P.ch; T.ch[p.id] = FIGHTERS[c] && c !== 'custom' && c !== 'opcustom' ? c : 'a'; T.nk[p.id] = p.me ? FIGHTERS[st.ch].nick : chNick(p.P); });
   // Firestore no guarda listas dentro de listas: cada equipo y cada ronda van envueltos en un objeto.
   if (mode === 'team') T.tm = [{ p: [ids[0], ids[1]] }, { p: [ids[2], ids[3]] }];
   if (mode === 'team3') T.tm = [{ p: ids.slice(0, 3) }, { p: ids.slice(3, 6) }];
@@ -675,7 +719,7 @@ function syncRoom(now) {
   if (T && T.done && !st.doneSeen[T.id] && T.mode !== 'duel') {
     st.doneSeen[T.id] = 1;
     const mine = isTeam(T) ? !!(T.tm && T.tm[T.win] && T.tm[T.win].p.includes(st.myId)) : T.win === st.myId;
-    if (mine) { prog.ftw++; const got = []; checkUnlocks(got); saveProg(); toast('¡Ganaste el torneo!' + (got.length ? ' ' + got.join(' · ') : '')); }
+    if (mine) { prog.ftw++; prog.epics++; const got = ['Cofre épico']; checkUnlocks(got); saveProg(); toast('¡Ganaste el torneo!' + (got.length ? ' ' + got.join(' · ') : '')); }
   }
   const rk = st.peers.map(p => p.id + '/' + (p.P.nm || '') + '/' + (p.P.ch || '') + '/' + (p.P.tt || '')).join('|') + '#' + st.hostId;
   if (rk !== st.rosterKey) {
@@ -712,7 +756,12 @@ function handleOpp(P) {
   }
   st.opp.present = true;
   const o = st.opp;
-  o.name = cleanName(P.nm); o.ch = FIGHTERS[P.ch] ? P.ch : 'a'; o.gl = GLOVES[P.gl] ? P.gl : ''; o.ht = HATS[P.ht] ? P.ht : ''; o.tt = typeof P.tt === 'string' ? P.tt.slice(0, 30) : '';
+  o.name = cleanName(P.nm); o.gl = GLOVES[P.gl] ? P.gl : ''; o.ht = HATS[P.ht] ? P.ht : ''; o.sh = SHIRTS[P.sh] ? P.sh : ''; o.sk = SKINS[P.sk] ? P.sk : '';
+  if (P.ch === 'custom') {
+    const d = cleanCustom(P.cu), key = JSON.stringify(d);
+    if (key !== st.opCuKey) { st.opCuKey = key; FIGHTERS.opcustom = buildCustom(d); lookCache = {}; }
+    o.ch = 'opcustom';
+  } else o.ch = FIGHTERS[P.ch] && P.ch !== 'custom' && P.ch !== 'opcustom' && P.ch !== 'preview' ? P.ch : 'a'; o.tt = typeof P.tt === 'string' ? P.tt.slice(0, 30) : '';
   o.hp = clamp(num(P.hp, oppMaxHp()), 0, oppMaxHp()); o.en = clamp(num(P.en, 0), 0, EN_MAX); o.bb = clamp(num(P.bb, 0), 0, guardMax(o.ch));
   o.g = !!P.g; o.d = !!P.d; o.rf = num(P.rf, 0); o.rd = num(P.rd, 0); o.rv = num(P.rv, 0);
   const a = P.a && typeof P.a === 'object' ? P.a : null;
@@ -750,59 +799,64 @@ function startRound(R) {
   st.kickN = 0; st.drainN = 0; st.lastRegen = 0; st.lastHeal = now + COUNT_MS;
   st.phase = 'countdown'; st.countdownEnd = now + COUNT_MS;
   st.opp.hp = oppMaxHp(); st.opp.bb = 0; st.opp.en = 0;
-  st.en = 0; st.stunUntil = 0; st.oppStunUntil = 0; st.counterUntil = 0; st.smokeN = 0; st.shieldUntil = 0; st.spOf = {}; st.fx = []; st.guardAt = 0;
+  st.en = Math.min(EN_MAX, (pw(st.ch).enStart || 0) + (flLevel(st.ch) >= 3 ? 20 : 0)); st.armor = pw(st.ch).armor || 0; st.revived = false; st.finUsed = false; st.stunUntil = 0; st.oppStunUntil = 0; st.counterUntil = 0; st.smokeN = 0; st.shieldUntil = 0; st.spOf = {}; st.fx = []; st.guardAt = 0;
   if (st.opp.a) st.lastOppAtkN = Math.max(st.lastOppAtkN, num(st.opp.a.n, 0));
   if (st.opp.s) st.lastOppResN = Math.max(st.lastOppResN, num(st.opp.s.n, 0));
-  if (st.mode === 'bot') Object.assign(bot, { en: 0, stunUntil: 0, smokeN: 0, shieldUntil: 0, hp: oppMaxHp(), bb: 0, g: false, gUntil: 0, dUntil: 0, dCd: 0, nextAtk: now + COUNT_MS + 900, kn: 0, combo: 0 });
-  pub({ rd: R, hp: st.hp, bb: 0, g: 0, d: 0, en: 0 });
+  if (st.mode === 'bot') Object.assign(bot, { en: pw(st.opp.ch).enStart || 0, armor: pw(st.opp.ch).armor || 0, revived: false, stunUntil: 0, smokeN: 0, shieldUntil: 0, hp: oppMaxHp(), bb: 0, g: false, gUntil: 0, dUntil: 0, dCd: 0, nextAtk: now + COUNT_MS + 900, kn: 0, combo: 0 });
+  pub({ rd: R, hp: st.hp, bb: 0, g: 0, d: 0, en: Math.round(st.en) });
   showScreen(null);
   wakeLock();
 }
 
 function endRound(won) {
-  if (st.phase === 'over') return;
-  st.phase = 'over'; st.result = won; setGuard(false); clearTimeout(st.bufT);
+  if (st.phase === 'over' || st.phase === 'ko') return;
+  const now = performance.now(), W = innerWidth, H = innerHeight;
+  st.phase = 'ko'; st.result = won; st.finUsed = false; setGuard(false); clearTimeout(st.bufT);
+  st.incoming = st.incoming.filter(a => a.sp === 'finish');
+  // Después del K.O. el que ganó puede rematar si tiene media barra; si no puede, el K.O. dura menos.
+  const canRemate = won ? st.en >= FIN_COST : st.mode === 'bot' || (st.opp.en || 0) >= FIN_COST;
+  st.koUntil = now + (canRemate ? KO_MS : 1500);
   award(won);
   pub({ g: 0, d: 0 });
-  floater('K.O.', innerWidth / 2, innerHeight * 0.3, won ? C.ember : C.slap, 2.2);
+  floater('K.O.', W / 2, H * 0.3, won ? C.ember : C.slap, 2.2);
   if (won) sfx.slap(); else sfx.hurt();
+  if (won && canRemate) floater('¡REMATALO! Tocá REMATE', W / 2, H * 0.62, C.ember, 1.1);
+  if (!won && canRemate) floater('Si te rematan, cubrite justo cuando el aro llegue al centro', W / 2, H * 0.62, C.steel, 0.75);
+  if (!won && st.mode === 'bot') setTimeout(() => { if (st.phase === 'ko' && st.mode === 'bot' && Math.random() < 0.75) receiveAttack(Math.random() < .5 ? 'L' : 'R', ++bot.n, { sp: 'finish', w: SPECIALS.finish.wu }); }, 700 + Math.random() * 600);
   releaseWake();
+}
+function finishKo() {
   const r = st.round;
-  setTimeout(() => {
-    if (st.phase !== 'over' || st.round !== r) return;
-    renderOver(); showScreen('over');
-    if (st.mode === 'online' && st.T && st.T.mode !== 'duel') setTimeout(() => { if (st.phase === 'over' && st.round === r && st.T) { st.phase = 'tour'; showScreen('tour'); tourKey = ''; renderTourMaybe(); } }, 3500);
-  }, 1300);
+  st.phase = 'over'; setGuard(false); st.incoming = [];
+  renderOver(); showScreen('over');
+  if (st.mode === 'online' && st.T && st.T.mode !== 'duel') setTimeout(() => { if (st.phase === 'over' && st.round === r && st.T) { st.phase = 'tour'; showScreen('tour'); tourKey = ''; renderTourMaybe(); } }, 3500);
 }
 
-// XP, rachas y desbloqueos al terminar cada pelea.
+// XP, rachas, niveles del peleador, cofres y desbloqueos al terminar cada pelea.
 function award(won) {
   const got = []; let xp;
   prog.fights++;
+  if (!won) prog.losses++;
   if (st.mode === 'online') {
     xp = won ? 100 : 40;
     if (won) { prog.wins++; prog.streak++; prog.best = Math.max(prog.best, prog.streak); } else prog.streak = 0;
   } else if (st.tour) {
     xp = won ? 50 : 15;
-    if (won && st.tour.stage === TOUR.length - 1) { xp += 150; prog.tours++; }
+    if (won && st.tour.stage === TOUR.length - 1) { xp += 150; prog.tours++; prog.epics++; got.push('Cofre épico'); }
   } else xp = won ? 30 : 10;
-  const before = passLevel(prog.xp); prog.xp += xp; const after = passLevel(prog.xp);
-  for (let lv = before + 1; lv <= after; lv++) {
-    const r = PASS[lv - 1];
-    if (r.glove && !prog.gloves[r.glove]) { prog.gloves[r.glove] = 1; got.push('Guantes ' + GLOVES[r.glove].name); }
-    if (r.title && !prog.titles[r.title]) { prog.titles[r.title] = 1; got.push('Título: ' + r.title); }
-    if (r.hat && !prog.hats[r.hat]) { prog.hats[r.hat] = 1; got.push('Gorro ' + HATS[r.hat].name); }
-    if (r.ch && !prog.chars[r.ch]) { prog.chars[r.ch] = 1; got.push('Personaje nuevo: ' + FIGHTERS[r.ch].nick); }
+  if (won) {
+    const before = flLevel(st.ch); prog.fl[st.ch] = flWins(st.ch) + 1; const after = flLevel(st.ch);
+    if (after > before) { got.push(FIGHTERS[st.ch].nick + ' sube a nivel ' + after + ': ' + FL_PERKS[after - 1].toLowerCase()); prog.chests++; got.push('Cofre común'); }
+    if (st.mode === 'online' || st.tour) { prog.chestProg++; if (prog.chestProg >= 3) { prog.chestProg = 0; prog.chests++; got.push('Cofre común por 3 victorias'); } }
   }
-  checkUnlocks(got);
-  saveProg();
-  st.award = { xp, got, level: after, up: after > before };
+  prog.xp += xp; claimPass(got); checkUnlocks(got); saveProg();
+  st.award = { xp, got, level: passLevel(prog.xp) };
 }
 
 function startBot() {
   st.mode = 'bot'; resetOpp(); st.opp.present = true; st.myBonus = 0; st.oppBonus = 0;
   if (st.tour) {
-    const pool = ORDER.filter(c => c !== st.ch);
+    const pool = ORDER.filter(c => c !== st.ch && c !== 'custom');
     st.opp.ch = pool[Math.floor(Math.random() * pool.length)];
     st.opp.name = FIGHTERS[st.opp.ch].nick;
     bot.lvl = BOTLV[st.tour.stage];
@@ -823,8 +877,9 @@ function inPlay() { return st.phase === 'fight'; }
 
 function stunned(now) { return now < st.stunUntil; }
 function addEn(v) {
-  const before = st.en; st.en = clamp(st.en + v, 0, EN_MAX);
-  if (st.en !== before) pub({ en: st.en });
+  const rate = (pw(st.ch).enRate || 1) * (flLevel(st.ch) >= 5 ? 1.1 : 1);
+  const before = st.en; st.en = clamp(st.en + (v > 0 ? v * rate : v), 0, EN_MAX);
+  if (st.en !== before) pub({ en: Math.round(st.en) });
 }
 function spName(ch) { const F = pw(ch); return F.sp ? F.sp[1] : 'Poder'; }
 
@@ -837,6 +892,7 @@ function launch(hand, opts) {
     st.kickN++;
     k = F.kick && st.kickN % F.kick === 0 ? 1 : 0;
     if (now < st.counterUntil) { c = 1; st.counterUntil = 0; }
+    if (F.berserk && st.hp <= F.berserk) c = 1;
   }
   const wu = o.wu || windupOf(st.ch);
   const sl = { hand, t0: now, n: st.atkN, wu, k, c, sp: o.sp || '', big: o.sp === 'heavy' || o.sp === 'finish' ? 1.5 : 1 };
@@ -892,21 +948,22 @@ function usePower() {
   st.en = 0; pub({ en: 0 }); prog.powers++;
   floater('¡' + spName(st.ch).toUpperCase() + '!', innerWidth / 2, innerHeight * 0.62, C.steel, 1.3);
   buzz(40);
-  if (type === 'heal') { st.hp = Math.min(myMaxHp(), st.hp + 2); pub({ hp: st.hp }); floater('+2 VIDAS', innerWidth / 2, innerHeight * 0.72, C.steel, 1); return; }
-  if (type === 'smoke') { st.smokeN = 3; st.fx.push({ type: 'smoke', t0: now, dur: 9000 }); return; }
-  if (type === 'shield') { st.shieldUntil = now + 4000; st.fx.push({ type: 'shield', t0: now, dur: 4000 }); return; }
-  if (type === 'flurry') { for (let i = 0; i < 4; i++) setTimeout(() => { if (inPlay()) launch(i % 2 ? 'R' : 'L'); }, i * 150); return; }
-  const sl = launch(Math.random() < .5 ? 'L' : 'R', { sp: type, wu: S.wu });
+  if (type === 'heal') { st.hp = Math.min(myMaxHp(), st.hp + 1); pub({ hp: st.hp }); floater('+1 VIDA', innerWidth / 2, innerHeight * 0.72, C.steel, 1); return; }
+  if (type === 'smoke') { st.smokeN = 2; st.fx.push({ type: 'smoke', t0: now, dur: 9000 }); return; }
+  if (type === 'shield') { st.shieldUntil = now + 3000; st.fx.push({ type: 'shield', t0: now, dur: 3000 }); return; }
+  if (type === 'flurry') { for (let i = 0; i < 3; i++) setTimeout(() => { if (inPlay()) launch(i % 2 ? 'R' : 'L'); }, i * 160); return; }
+  launch(Math.random() < .5 ? 'L' : 'R', { sp: type, wu: S.wu });
   if (type === 'blast') st.fx.push({ type: 'beamOut', t0: now, dur: S.wu + 260 });
-  return sl;
 }
-// Botón REMATE: cuando al rival le queda una vida y tenés media barra de energía.
-function canFinish() { return inPlay() && st.opp.hp <= 1 && st.opp.hp > 0 && st.en >= FIN_COST; }
+// Botón REMATE: después del K.O., el que ganó puede rematar si tiene media barra de energía.
+// El que perdió lo bloquea cubriéndose justo cuando el aro llega al centro.
+function canFinish() { return st.phase === 'ko' && st.result === true && !st.finUsed && st.en >= FIN_COST; }
 function useFinish() {
   audio();
+  if (!canFinish()) return;
   const now = performance.now();
-  if (!canFinish() || stunned(now)) return;
-  st.en -= FIN_COST; pub({ en: st.en });
+  st.finUsed = true; st.en -= FIN_COST; pub({ en: Math.round(st.en) });
+  st.koUntil = Math.max(st.koUntil, now + SPECIALS.finish.wu + 1600);
   st.fx.push({ type: 'finOut', t0: now, dur: SPECIALS.finish.wu + 500 });
   launch(Math.random() < .5 ? 'L' : 'R', { sp: 'finish', wu: SPECIALS.finish.wu });
   buzz(60);
@@ -914,7 +971,7 @@ function useFinish() {
 
 function setGuard(on) {
   const now = performance.now();
-  if (on && ((st.phase !== 'fight' && st.phase !== 'countdown') || stunned(now))) on = false;
+  if (on && ((st.phase !== 'fight' && st.phase !== 'countdown' && st.phase !== 'ko') || stunned(now))) on = false;
   if (st.guardHeld === on) return;
   st.guardHeld = on; if (on) st.guardAt = now;
   pub({ g: on ? 1 : 0 });
@@ -933,38 +990,51 @@ function dodge() {
 
 function receiveAttack(hand, n, info) {
   const i = info || {}, sp = SPECIALS[i.sp] ? i.sp : '';
-  const wu = clamp(num(i.w, windupOf(st.opp.ch)), 150, 900) + (pw(st.ch).read || 0);
+  const wu = clamp(num(i.w, windupOf(st.opp.ch)), 150, 1000) + (sp === 'finish' ? 0 : (pw(st.ch).read || 0));
   const a = { hand, t0: performance.now(), n, k: i.k ? 1 : 0, c: i.c ? 1 : 0, sp, wu, big: sp === 'heavy' || sp === 'finish' ? 1.5 : 1, done: false, res: null };
   st.incoming.push(a);
-  if (sp) {
-    const nm = sp === 'finish' ? 'REMATE' : spName(st.opp.ch).toUpperCase();
-    floater('¡' + nm + '!', innerWidth / 2, innerHeight * 0.2, sp === 'finish' ? C.slap : C.ember, sp === 'finish' ? 1.8 : 1.2);
+  if (sp === 'finish') {
+    st.koUntil = Math.max(st.koUntil, a.t0 + wu + 1600);
+    st.fx.push({ type: 'finIn', t0: a.t0, dur: wu + 500, wu });
+    floater('¡TE VIENE EL REMATE!', innerWidth / 2, innerHeight * 0.2, C.slap, 1.4);
+  } else if (sp) {
+    floater('¡' + spName(st.opp.ch).toUpperCase() + '!', innerWidth / 2, innerHeight * 0.2, C.ember, 1.2);
     if (sp === 'blast') st.fx.push({ type: 'beamIn', t0: a.t0, dur: wu + 260 });
-    if (sp === 'finish') st.fx.push({ type: 'finIn', t0: a.t0, dur: wu + 500 });
   }
 }
 
-const DMG = { heavy: 3, blast: 2, drain: 2, stun: 1, finish: 99 };
+const DMG = { heavy: 2, blast: 2, drain: 1, stun: 1 };
 function resolveOnMe(a, now) {
+  const W = innerWidth, H = innerHeight;
+  // El remate llega después del K.O.: no saca vidas, se bloquea cubriéndose justo a tiempo.
+  if (a.sp === 'finish') {
+    if (st.phase !== 'ko' || st.result !== false) return 'void';
+    const ok = st.guardAt >= a.t0 + a.wu - FIN_WIN && st.guardAt <= a.t0 + a.wu + 90;
+    const r = ok ? 'parry' : 'hit';
+    if (ok) { sfx.block(); floater('¡BLOQUEASTE EL REMATE!', W / 2, H * 0.32, C.steel, 1.3); }
+    else { hurtMe(a.hand === 'L' ? 1 : -1); st.shake = 26; floater('¡REMATADO!', W / 2, H * 0.4, C.slap, 2.2); }
+    const res = { n: a.n, r, x: st.round };
+    send('res', res); pub({ s: res });
+    return r;
+  }
   if (st.phase !== 'fight' && st.phase !== 'countdown') return 'void';
   const side = a.hand === 'L' ? 1 : -1, F = pw(st.ch), gmax = guardMax(st.ch), sp = a.sp;
-  const W = innerWidth, H = innerHeight;
   let r, dmg = 0;
   const parry = st.guardHeld && now - st.guardAt <= PARRY_MS;
   if (parry) {
-    r = 'parry'; addEn(30); prog.parries++; st.counterUntil = now + COUNTER_MS; st.oppStunUntil = now + STUN_PARRY;
+    r = 'parry'; addEn(25); prog.parries++; st.counterUntil = now + COUNTER_MS; st.oppStunUntil = now + STUN_PARRY;
     if (st.mode === 'bot') { bot.stunUntil = now + STUN_PARRY; bot.g = false; }
     sfx.block(); st.shake = Math.max(st.shake, 6); floater('¡CONTRAGOLPE!', W / 2, H * 0.3, C.steel, 1.3);
-  } else if (sp !== 'finish' && now < st.dodgeUntil) {
-    r = 'dodge'; addEn(12); st.counterUntil = now + COUNTER_MS; floater('¡ESQUIVASTE!', W / 2, H * 0.3, C.steel, 1);
-  } else if (sp !== 'finish' && st.smokeN > 0) {
+  } else if (now < st.dodgeUntil) {
+    r = 'dodge'; addEn(10); st.counterUntil = now + COUNTER_MS; floater('¡ESQUIVASTE!', W / 2, H * 0.3, C.steel, 1);
+  } else if (st.smokeN > 0) {
     st.smokeN--; r = 'dodge'; floater('SE PERDIÓ EN EL HUMO', W / 2, H * 0.3, C.steel, 0.9);
-  } else if (sp !== 'finish' && F.smoke && Math.random() < F.smoke) {
+  } else if (F.smoke && Math.random() < F.smoke) {
     r = 'dodge'; floater('SE PERDIÓ EN EL HUMO', W / 2, H * 0.3, C.steel, 0.9);
-  } else if (sp !== 'finish' && now < st.shieldUntil) {
-    r = 'block'; addEn(8); sfx.block(); floater('ESCUDO', W / 2, H * 0.32, C.steel, 0.9);
-  } else if (st.guardHeld && sp !== 'blast' && sp !== 'finish') {
-    st.lastRegen = now; addEn(8);
+  } else if (now < st.shieldUntil && sp !== 'blast') {
+    r = 'block'; addEn(5); sfx.block(); floater('ESCUDO', W / 2, H * 0.32, C.steel, 0.9);
+  } else if (st.guardHeld && sp !== 'blast') {
+    st.lastRegen = now; addEn(5);
     if (sp === 'heavy') { st.bb = 0; dmg = 1; r = 'break'; floater('¡TE ROMPIÓ LA GUARDIA! −1', W / 2, H * 0.3, C.slap, 1.1); }
     else {
       st.bb++;
@@ -973,19 +1043,24 @@ function resolveOnMe(a, now) {
     }
   } else {
     r = 'hit'; dmg = sp ? DMG[sp] : (a.k || a.c ? 2 : 1); addEn(10);
-    const txt = sp === 'finish' ? '¡REMATADO!' : sp ? '¡' + spName(st.opp.ch).toUpperCase() + '! −' + dmg : a.k ? '¡PATADA! −2' : a.c ? '¡CONTRA! −2' : '¡PAF!';
-    floater(txt, W / 2 + (sp ? 0 : side * W * 0.22), H * 0.4, C.slap, sp === 'finish' ? 2 : 1.4);
+    const txt = sp ? '¡' + spName(st.opp.ch).toUpperCase() + '! −' + dmg : a.k ? '¡PATADA! −2' : a.c ? '¡CONTRA! −2' : '¡PAF!';
+    floater(txt, W / 2 + (sp ? 0 : side * W * 0.22), H * 0.4, C.slap, 1.4);
     if (sp === 'stun') { st.stunUntil = now + STUN_SPEC; setGuard(false); st.fx.push({ type: 'stunMe', t0: now, dur: STUN_SPEC }); }
   }
-  if (dmg) { st.hp = Math.max(0, st.hp - dmg); hurtMe(side); }
+  if (dmg && st.armor > 0) { st.armor--; dmg = 0; floater('LAS VENDAS LO FRENARON', W / 2, H * 0.5, C.steel, 0.9); }
+  if (dmg) {
+    st.hp = Math.max(0, st.hp - dmg); hurtMe(side);
+    if (st.hp <= 0 && F.revive && !st.revived) { st.revived = true; st.hp = 1; floater('¡VOLVIÓ DE LA TUMBA!', W / 2, H * 0.58, C.steel, 1.2); }
+  }
   const res = { n: a.n, r, x: st.round };
   send('res', res); pub({ hp: st.hp, bb: st.bb, s: res });
   if (st.hp <= 0) endRound(false);
   return r;
 }
 
-// Poderes que corren solos con el tiempo: guardia que se recupera y vidas que vuelven.
+// Habilidades que corren solas con el tiempo: guardia que se recupera y vidas que vuelven.
 function powerTick(now) {
+  if (st.phase === 'ko' && now >= st.koUntil) { finishKo(); return; }
   if (st.phase !== 'fight') return;
   const F = pw(st.ch);
   if (F.regen && st.bb > 0 && now - st.lastRegen > F.regen) { st.bb--; st.lastRegen = now; pub({ bb: st.bb }); }
@@ -1003,12 +1078,21 @@ function hurtMe(side) {
 function onMyResult(n, r) {
   const landed = x => x === 'hit' || x === 'break', F = pw(st.ch), sp = st.spOf[n];
   const now = performance.now();
+  if (sp === 'finish') {
+    delete st.spOf[n];
+    if (r === 'hit') {
+      prog.fins++; prog.xp += 50; const got = []; claimPass(got); checkUnlocks(got); saveProg();
+      if (st.award) { st.award.xp += 50; st.award.got.push('Remate: +50 XP', ...got); st.award.level = passLevel(prog.xp); }
+      st.oppHurtAt = now; st.oppCheek = [1.6, 1.6]; sfx.slap(); st.shake = 24;
+      floater('¡REMATE!', innerWidth / 2, innerHeight * 0.3, C.slap, 2.4);
+    } else floater('TE BLOQUEÓ EL REMATE', innerWidth / 2, innerHeight * 0.3, C.steel, 1.2);
+    return;
+  }
   if (landed(r) && st.phase === 'fight') {
-    addEn(20);
+    addEn(15);
     if (F.drain && ++st.drainN >= F.drain) { st.drainN = 0; if (st.hp < myMaxHp()) { st.hp++; pub({ hp: st.hp }); floater('+1 VIDA', innerWidth / 2, innerHeight * 0.7, C.steel, 1); } }
-    if (sp === 'drain') { st.hp = Math.min(myMaxHp(), st.hp + 2); pub({ hp: st.hp }); floater('+2 VIDAS', innerWidth / 2, innerHeight * 0.72, C.steel, 1); }
+    if (sp === 'drain' && st.hp < myMaxHp()) { st.hp++; pub({ hp: st.hp }); floater('+1 VIDA', innerWidth / 2, innerHeight * 0.72, C.steel, 1); }
     if (sp === 'stun') { st.oppStunUntil = now + STUN_SPEC; }
-    if (sp === 'finish') prog.fins++;
   }
   if (r === 'parry' && st.phase === 'fight') {
     st.stunUntil = now + STUN_PARRY; setGuard(false); st.fx.push({ type: 'stunMe', t0: now, dur: STUN_PARRY });
@@ -1033,7 +1117,7 @@ function showMyResult(n, r, hand, k, sp) {
     st.oppCheek[idx] = Math.min(1.6, Math.max(st.oppCheek[idx], 0.45) + (sp ? 0.9 : 0.4));
     st.oppHurtAt = performance.now(); sfx.slap();
     if (sp) st.shake = Math.max(st.shake, 10);
-    floater(sp === 'finish' ? '¡REMATE!' : r === 'break' ? '¡GUARDIA ROTA!' : sp ? '¡' + spName(st.ch).toUpperCase() + '!' : k ? '¡PATADA!' : '¡PAF!', x, H * 0.24, sp === 'finish' ? C.slap : C.paper, sp === 'finish' ? 2 : r === 'hit' ? 1.5 : 1.1);
+    floater(r === 'break' ? '¡GUARDIA ROTA!' : sp ? '¡' + spName(st.ch).toUpperCase() + '!' : k ? '¡PATADA!' : '¡PAF!', x, H * 0.24, C.paper, r === 'hit' ? 1.5 : 1.1);
   } else if (r === 'block') { sfx.block(); floater('BLOQUEÓ', x, H * 0.24, C.paper, 0.9); }
   else if (r === 'dodge') { floater('LO ESQUIVÓ', x, H * 0.24, C.muted, 0.9); }
   else if (r === 'parry') { sfx.block(); floater('CONTRAGOLPE', x, H * 0.24, C.steel, 1); }
@@ -1041,20 +1125,24 @@ function showMyResult(n, r, hand, k, sp) {
 
 /* ---------------- bot ---------------- */
 function botResolve(sl) {
-  if (st.phase !== 'fight' || st.mode !== 'bot') return;
+  if (st.mode !== 'bot') return;
   const now = performance.now(), gmax = guardMax(st.opp.ch), O = pw(st.opp.ch), L = bot.lvl || BOTLV[1], sp = sl.sp;
+  if (sp === 'finish') { if (st.phase === 'ko') onMyResult(sl.n, Math.random() < L.par * 2.5 ? 'parry' : 'hit'); return; }
+  if (st.phase !== 'fight') return;
   let r, dmg = 0;
   if (bot.g && Math.random() < L.par) r = 'parry';
-  else if (sp !== 'finish' && now < bot.dUntil) r = 'dodge';
-  else if (sp !== 'finish' && bot.smokeN > 0) { bot.smokeN--; r = 'dodge'; }
-  else if (sp !== 'finish' && O.smoke && Math.random() < O.smoke) r = 'dodge';
-  else if (sp !== 'finish' && now < bot.shieldUntil) r = 'block';
-  else if (bot.g && sp !== 'blast' && sp !== 'finish') {
+  else if (now < bot.dUntil) r = 'dodge';
+  else if (bot.smokeN > 0) { bot.smokeN--; r = 'dodge'; }
+  else if (O.smoke && Math.random() < O.smoke) r = 'dodge';
+  else if (now < bot.shieldUntil && sp !== 'blast') r = 'block';
+  else if (bot.g && sp !== 'blast') {
     if (sp === 'heavy') { bot.bb = 0; dmg = 1; r = 'break'; }
     else { bot.bb++; if (bot.bb >= gmax) { bot.bb = 0; dmg = 1; r = 'break'; } else r = 'block'; }
   } else { r = 'hit'; dmg = sp ? DMG[sp] : (sl.k || sl.c ? 2 : 1); if (sp === 'stun') bot.stunUntil = now + STUN_SPEC; }
-  if (r === 'parry') bot.en = Math.min(EN_MAX, bot.en + 30);
+  if (dmg && bot.armor > 0) { bot.armor--; dmg = 0; }
+  if (r === 'parry') bot.en = Math.min(EN_MAX, bot.en + 25);
   bot.hp -= dmg;
+  if (bot.hp <= 0 && O.revive && !bot.revived) { bot.revived = true; bot.hp = 1; }
   onMyResult(sl.n, r);
   if (bot.hp <= 0) endRound(true);
 }
@@ -1071,26 +1159,22 @@ function botTick(now) {
     else if (roll < L.blk + L.dg && now > bot.dCd) setTimeout(() => { const t = performance.now(); bot.dUntil = t + dodgeMsOf(st.opp.ch); bot.dCd = t + dodgeCdOf(st.opp.ch); }, delay);
   }
   if (stun) { syncBotView(now); return; }
-  // remate de la máquina
-  if (st.hp <= 1 && bot.en >= FIN_COST && Math.random() < 0.01) {
-    bot.en -= FIN_COST; receiveAttack(Math.random() < .5 ? 'L' : 'R', ++bot.n, { sp: 'finish', w: SPECIALS.finish.wu });
-  }
-  // especial de la máquina
+  // poder de la máquina
   if (bot.en >= EN_MAX && Math.random() < 0.006) {
     bot.en = 0;
     const type = O.sp ? O.sp[0] : 'heavy';
     floater('¡' + spName(st.opp.ch).toUpperCase() + '!', innerWidth / 2, innerHeight * 0.2, C.ember, 1.2);
-    if (type === 'heal') bot.hp = Math.min(oppMaxHp(), bot.hp + 2);
-    else if (type === 'smoke') bot.smokeN = 3;
-    else if (type === 'shield') bot.shieldUntil = now + 4000;
-    else if (type === 'flurry') { for (let i = 0; i < 4; i++) setTimeout(() => { if (st.phase === 'fight') receiveAttack(i % 2 ? 'R' : 'L', ++bot.n, {}); }, i * 150); }
+    if (type === 'heal') bot.hp = Math.min(oppMaxHp(), bot.hp + 1);
+    else if (type === 'smoke') bot.smokeN = 2;
+    else if (type === 'shield') bot.shieldUntil = now + 3000;
+    else if (type === 'flurry') { for (let i = 0; i < 3; i++) setTimeout(() => { if (st.phase === 'fight') receiveAttack(i % 2 ? 'R' : 'L', ++bot.n, {}); }, i * 160); }
     else receiveAttack(Math.random() < .5 ? 'L' : 'R', ++bot.n, { sp: type, w: SPECIALS[type].wu });
   }
   if (now > bot.nextAtk && !bot.g && now > bot.dUntil) {
     bot.combo++; bot.kn++; bot.en = Math.min(EN_MAX, bot.en + 12);
     if (bot.combo >= comboMax(st.opp.ch)) { bot.combo = 0; bot.nextAtk = now + restOf(st.opp.ch) + Math.random() * L.rest; }
     else bot.nextAtk = now + GAP + 30 + Math.random() * 300;
-    receiveAttack(Math.random() < .5 ? 'L' : 'R', ++bot.n, { k: O.kick && bot.kn % O.kick === 0 });
+    receiveAttack(Math.random() < .5 ? 'L' : 'R', ++bot.n, { k: O.kick && bot.kn % O.kick === 0, c: O.berserk && bot.hp <= O.berserk });
   }
   syncBotView(now);
 }
@@ -1162,56 +1246,68 @@ function rr(x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
 
+// Cada personaje: aspecto, una habilidad fija (power) y un poder que se activa con la energía (sp).
 const FIGHTERS = {
   a: { nick: 'BARBA', skin: '#dfa67e', shade: '#a96f4d', hair: '#110c0b', glove: '#1b1c20', gloveHi: '#3d4047', hairStyle: 'buzz', beard: 'full', brow: 'straight', chestHair: true,
     hp: 6, sp: ['heavy', 'Mazazo'], power: ['Mandíbula de hierro', 'Tiene 6 vidas en vez de 5.'] },
   b: { nick: 'NAVAJA', skin: '#d89b74', shade: '#a2694a', hair: '#1c1310', glove: '#d6922a', gloveHi: '#f2c466', hairStyle: 'fade', beard: 'trim', brow: 'arched',
-    kick: 3, sp: ['flurry', 'Ráfaga'], power: ['Patada', 'Cada tercer golpe es una patada que saca 2 vidas.'] },
+    kick: 4, sp: ['flurry', 'Ráfaga'], power: ['Patada', 'Cada cuarto golpe es una patada que saca 2 vidas.'] },
   sanmartin: { nick: 'SAN MARTÍN', hist: true, skin: '#e9bf9c', shade: '#b88c6c', hair: '#1f1510', glove: '#1d2b5c', gloveHi: '#c9a227', hairStyle: 'swept', beard: 'sideburns', brow: 'straight', outfit: 'granadero',
-    regen: 1500, sp: ['flurry', 'Carga de granaderos'], power: ['Granadero', 'Su guardia se recupera sola: un punto cada 1,5 s.'] },
+    regen: 2000, sp: ['flurry', 'Carga de granaderos'], power: ['Granadero', 'Su guardia se recupera sola: un punto cada 2 s.'] },
   cesar: { nick: 'JULIO CÉSAR', hist: true, skin: '#e3b48f', shade: '#ad7a58', hair: '#3a2418', glove: '#c9a227', gloveHi: '#f3dc7a', hairStyle: 'roman', beard: 'none', brow: 'straight', outfit: 'toga', hat: 'laurel',
-    combo: 3, sp: ['heavy', 'Golpe imperial'], power: ['Legión', 'Pega tandas de 3 cachetadas en vez de 2.'] },
+    combo: 3, rest: 3600, sp: ['heavy', 'Golpe imperial'], power: ['Legión', 'Pega tandas de 3, pero descansa 3,6 s.'] },
   cleo: { nick: 'CLEOPATRA', hist: true, skin: '#c98c62', shade: '#94603e', hair: '#0d0a0c', glove: '#1aa39a', gloveHi: '#7fe0d6', hairStyle: 'bob', beard: 'none', brow: 'thin', outfit: 'collar', hat: 'uraeus', liner: true, lips: '#a8323a',
-    windup: 220, sp: ['stun', 'Hipnosis'], power: ['Golpe veloz', 'Sus cachetadas llegan más rápido: cuesta más cubrirse.'] },
+    windup: 250, sp: ['stun', 'Hipnosis'], power: ['Golpe veloz', 'Sus cachetadas llegan un poco más rápido.'] },
   napo: { nick: 'NAPOLEÓN', hist: true, skin: '#efc6a5', shade: '#bb8c6c', hair: '#2a1d16', glove: '#24346e', gloveHi: '#d4a72c', hairStyle: 'napo', beard: 'none', brow: 'straight', outfit: 'coat', hat: 'bicorne',
-    guard: 8, sp: ['shield', 'Formación'], power: ['Estratega', 'Su guardia aguanta 8 golpes antes de romperse.'] },
+    guard: 7, sp: ['shield', 'Formación'], power: ['Estratega', 'Su guardia aguanta 7 golpes antes de romperse.'] },
   leo: { nick: 'LEONARDO', hist: true, skin: '#eac3a0', shade: '#b98f6e', hair: '#d9d3c9', glove: '#6b4a2e', gloveHi: '#a8825a', hairStyle: 'long', beard: 'long', brow: 'bushy', outfit: 'robe', hat: 'beret',
-    rest: 1500, sp: ['blast', 'Invento explosivo'], power: ['Inventor', 'Descansa 1,5 s entre tandas en vez de 3.'] },
+    rest: 2000, sp: ['blast', 'Invento explosivo'], power: ['Inventor', 'Descansa 2 s entre tandas en vez de 3.'] },
   winnie: { nick: 'WINNIE POOH', hist: true, species: 'bear', skin: '#e2a54a', shade: '#b47a2c', muzzle: '#f3d39a', hair: '#b47a2c', glove: '#d98c1a', gloveHi: '#ffd27a',
-    hp: 8, rest: 4500, sp: ['heal', 'Pote de miel'], power: ['Panza de miel', 'Tiene 8 vidas, pero descansa 4,5 s entre tandas.'] },
+    hp: 7, rest: 4000, sp: ['heal', 'Pote de miel'], power: ['Panza de miel', 'Tiene 7 vidas, pero descansa 4 s entre tandas.'] },
   jengibre: { nick: 'JENGIBRE', hist: true, species: 'cookie', skin: '#b8733a', shade: '#8a5226', hair: '#8a5226', glove: '#f2ece0', gloveHi: '#ffffff',
-    hp: 3, dodgeMs: 600, dodgeCd: 600, sp: ['smoke', 'Glaseado'], power: ['¡Atrapame!', 'Esquiva sin esperar, pero tiene solo 3 vidas.'] },
+    hp: 4, dodgeMs: 600, dodgeCd: 600, sp: ['smoke', 'Glaseado'], power: ['¡Atrapame!', 'Esquiva sin esperar, pero tiene 4 vidas.'] },
   sherlock: { nick: 'SHERLOCK', hist: true, skin: '#ecc7a8', shade: '#b9906f', hair: '#2b1e17', glove: '#5a4330', gloveHi: '#8a6d50', hairStyle: 'short', beard: 'none', brow: 'straight', outfit: 'inverness', hat: 'deerstalker', pipe: true,
-    read: 160, sp: ['stun', 'Golpe deductivo'], power: ['Deducción', 'Los golpes que recibe tardan más en llegar.'] },
+    read: 140, sp: ['stun', 'Golpe deductivo'], power: ['Deducción', 'Los golpes que recibe tardan un poco más en llegar.'] },
   dracula: { nick: 'DRÁCULA', hist: true, skin: '#e4dbd3', shade: '#a99a90', hair: '#0b0909', glove: '#1a0d10', gloveHi: '#6b1a24', hairStyle: 'slick', beard: 'none', brow: 'arched', outfit: 'vampire', fangs: true, eye: '#b0141e',
-    drain: 3, sp: ['drain', 'Mordida'], power: ['Sed de sangre', 'Cada 3 cachetadas que conecta, recupera una vida.'] },
+    drain: 4, sp: ['drain', 'Mordida'], power: ['Sed de sangre', 'Cada 4 cachetadas que conecta, recupera una vida.'] },
   fumanchu: { nick: 'FUMANCHÚ', hist: true, skin: '#d9a27c', shade: '#a5724f', hair: '#3b2416', glove: '#74acdf', gloveHi: '#e8f3fc', hairStyle: 'dreads', beard: 'fumanchu', brow: 'straight', outfit: 'arg', joint: true, lids: true,
-    smoke: 0.25, sp: ['smoke', 'Humareda'], power: ['Cortina de humo', 'Uno de cada cuatro golpes que recibe se pierde en el humo.'] },
+    smoke: 0.15, sp: ['smoke', 'Humareda'], power: ['Cortina de humo', 'Más o menos uno de cada siete golpes que recibe se pierde en el humo.'] },
   jamaica: { nick: 'JAMAIQUINO', hist: true, skin: '#8a5a3c', shade: '#5e3a24', hair: '#1a110c', glove: '#009b3a', gloveHi: '#fed100', hairStyle: 'dreads', beard: 'goatee', brow: 'straight', outfit: 'jam', joint: true, lids: true,
-    heal: 15000, sp: ['flurry', 'Ritmo'], power: ['Buena vibra', 'Recupera una vida cada 15 s.'] },
+    heal: 20000, sp: ['flurry', 'Ritmo'], power: ['Buena vibra', 'Recupera una vida cada 20 s.'] },
   monje: { nick: 'EL MONJE', hist: true, skin: '#d9a982', shade: '#a77a57', hair: '#2a1d16', glove: '#4f6273', gloveHi: '#a9bccc', hairStyle: 'bald', beard: 'none', brow: 'straight', outfit: 'monk',
-    dodgeCd: 500, sp: ['blast', 'Onda de energía'], power: ['Reflejos', 'Su esquive se recarga casi al instante.'] },
+    dodgeCd: 550, sp: ['blast', 'Onda de energía'], power: ['Reflejos', 'Su esquive se recarga casi al instante.'] },
   momia: { nick: 'LA MOMIA', hist: true, skin: '#d8cdb3', shade: '#a99c7e', hair: '#b9ad90', glove: '#8a7f66', gloveHi: '#d8cdb3', hairStyle: 'wraps', beard: 'none', brow: 'none', outfit: 'wraps', eye: '#f5d34a', eyeWhite: '#2a241c', lips: '#9c8f72',
-    guard: 7, sp: ['stun', 'Maldición'], power: ['Vendas', 'Su guardia aguanta 7 golpes antes de romperse.'] },
+    armor: 1, sp: ['stun', 'Maldición'], power: ['Vendas', 'El primer golpe que recibe en cada pelea no le hace daño.'] },
   robot: { nick: 'ROBOT', hist: true, species: 'robot', skin: '#9aa3ad', shade: '#6d7680', hair: '#6d7680', glove: '#4a525c', gloveHi: '#c9d0d8',
-    hp: 7, windup: 360, sp: ['blast', 'Rayo láser'], power: ['Blindaje', 'Tiene 7 vidas, pero pega más lento.'] },
+    hp: 7, windup: 380, sp: ['blast', 'Rayo láser'], power: ['Blindaje', 'Tiene 7 vidas, pero pega más lento.'] },
   barbanegra: { nick: 'BARBANEGRA', hist: true, skin: '#d7a882', shade: '#a47552', hair: '#0e0b0a', glove: '#2a1c14', gloveHi: '#7a5a3a', hairStyle: 'long', beard: 'long', strand: 'rgba(255,255,255,0.12)', brow: 'straight', outfit: 'pirate', hat: 'tricorne',
-    hp: 6, rest: 2500, sp: ['heavy', 'Cañonazo'], power: ['Lobo de mar', 'Tiene 6 vidas y descansa 2,5 s entre tandas.'] },
+    rest: 2500, sp: ['heavy', 'Cañonazo'], power: ['Lobo de mar', 'Descansa 2,5 s entre tandas.'] },
   vikingo: { nick: 'VIKINGO', hist: true, skin: '#eac2a0', shade: '#b88f6d', hair: '#b5541c', glove: '#5a3b22', gloveHi: '#a7794d', hairStyle: 'long', beard: 'long', strand: 'rgba(0,0,0,0.22)', brow: 'bushyRed', outfit: 'fur', hat: 'horns',
-    combo: 3, rest: 3600, sp: ['flurry', 'Furia'], power: ['Berserker', 'Pega tandas de 3, pero descansa 3,6 s.'] }
+    berserk: 2, sp: ['flurry', 'Furia'], power: ['Berserker', 'Con 2 vidas o menos, cada cachetada saca 2.'] },
+  abuela: { nick: 'LA ABUELA', hist: true, skin: '#efc9b0', shade: '#bf957a', hair: '#cfcac4', glove: '#8e5aa8', gloveHi: '#d6b3e6', hairStyle: 'bun', beard: 'none', brow: 'thin', outfit: 'cardigan', glasses: true, lips: '#b0606a',
+    hp: 4, enRate: 1.5, sp: ['heavy', 'Chancletazo'], power: ['Mate cocido', 'La energía se le carga un 50% más rápido, pero tiene 4 vidas.'] },
+  gaucho: { nick: 'EL GAUCHO', hist: true, skin: '#c98f66', shade: '#94603e', hair: '#1a120d', glove: '#3b2a1c', gloveHi: '#8a6d50', hairStyle: 'short', beard: 'mustache', brow: 'straight', outfit: 'poncho', hat: 'beret', hatColor: '#141416',
+    enStart: 50, sp: ['stun', 'Boleadoras'], power: ['Guapo', 'Empieza cada pelea con media barra de energía.'] },
+  robin: { nick: 'ROBIN HOOD', hist: true, skin: '#e3b48f', shade: '#ad7a58', hair: '#5a3418', glove: '#3d5a1f', gloveHi: '#8fb35a', hairStyle: 'short', beard: 'goatee', brow: 'arched', outfit: 'tunic', hat: 'feather',
+    dodgeMs: 600, sp: ['blast', 'Flechazo'], power: ['Ágil', 'Su esquive dura más tiempo.'] },
+  zombi: { nick: 'ZOMBI', hist: true, skin: '#8fae7a', shade: '#5f7a4e', hair: '#1c2414', glove: '#3c4a35', gloveHi: '#7d8f6e', hairStyle: 'short', beard: 'none', brow: 'none', outfit: 'torn', eyeWhite: '#e9e2a8', stitches: true, lips: '#5f6e4e',
+    revive: 1, sp: ['drain', 'Mordisco'], power: ['No muere', 'La primera vez que llega a cero, vuelve con una vida.'] },
+  hercules: { nick: 'HÉRCULES', hist: true, skin: '#d9a57e', shade: '#a6714d', hair: '#3a2014', glove: '#b8862a', gloveHi: '#f0cf72', hairStyle: 'curly', beard: 'trim', brow: 'straight', outfit: 'lion', chestHair: false,
+    hp: 7, rest: 3500, sp: ['heavy', 'Fuerza divina'], power: ['Semidiós', 'Tiene 7 vidas, pero descansa 3,5 s entre tandas.'] }
 };
+// Poderes que se activan con la energía. Todos los de ataque se pueden esquivar o contragolpear.
 const SPECIALS = {
-  heavy: { wu: 420, desc: 'un cachetazo enorme que saca 3 vidas y rompe la guardia' },
-  blast: { wu: 650, desc: 'una onda de energía que atraviesa la guardia y saca 2 vidas: solo se esquiva o se contragolpea' },
-  flurry: { desc: 'una ráfaga de 4 cachetadas seguidas, sin descanso' },
-  stun: { wu: 380, desc: 'si conecta, el rival queda aturdido 2 s sin poder pegar ni cubrirse' },
-  drain: { wu: 340, desc: 'saca 2 vidas y te cura 2' },
-  heal: { desc: 'recupera 2 vidas' },
-  smoke: { desc: 'los próximos 3 golpes que recibís no te tocan' },
-  shield: { desc: 'durante 4 s bloqueás todo sin gastar guardia' },
-  finish: { wu: 700 }
+  heavy: { wu: 520, name: 'Golpazo', desc: 'un cachetazo enorme y lento que saca 2 vidas y rompe la guardia; se ve venir y se puede esquivar' },
+  blast: { wu: 700, name: 'Onda de energía', desc: 'una bola que se carga y atraviesa la guardia, saca 2 vidas; se esquiva o se contragolpea' },
+  flurry: { name: 'Ráfaga', desc: 'una ráfaga de 3 cachetadas seguidas, sin descanso' },
+  stun: { wu: 450, name: 'Aturdidor', desc: 'si conecta, saca 1 vida y deja al rival aturdido 1,5 s' },
+  drain: { wu: 400, name: 'Mordida', desc: 'si conecta, saca 1 vida y te cura 1' },
+  heal: { name: 'Curita', desc: 'recupera 1 vida' },
+  smoke: { name: 'Humo', desc: 'los próximos 2 golpes que recibís no te tocan' },
+  shield: { name: 'Escudo', desc: 'durante 3 s bloqueás todo sin gastar guardia (no frena la onda de energía)' },
+  finish: { wu: 950 }
 };
-const ORDER = ['a', 'b', 'sanmartin', 'cesar', 'cleo', 'napo', 'leo', 'winnie', 'jengibre', 'sherlock', 'dracula', 'fumanchu', 'jamaica', 'monje', 'momia', 'robot', 'barbanegra', 'vikingo'];
+const ORDER = ['a', 'b', 'sanmartin', 'cesar', 'cleo', 'napo', 'leo', 'winnie', 'jengibre', 'sherlock', 'dracula', 'fumanchu', 'jamaica', 'monje', 'momia', 'robot', 'barbanegra', 'vikingo', 'abuela', 'gaucho', 'robin', 'zombi', 'hercules', 'custom'];
 const GLOVES = {
   sangre: { name: 'Sangre', glove: '#a50f1b', gloveHi: '#ff5a5f' },
   plata: { name: 'Plata', glove: '#8f99a4', gloveHi: '#eef2f5' },
@@ -1219,14 +1315,59 @@ const GLOVES = {
   neon: { name: 'Neón', glove: '#14c46a', gloveHi: '#a6ffcf' },
   carbon: { name: 'Carbón', glove: '#0c0c0e', gloveHi: '#5b5e66' },
   oro: { name: 'Oro', glove: '#c99a1c', gloveHi: '#ffe58a' },
-  fuego: { name: 'Fuego', glove: '#ff5a1f', gloveHi: '#ffd36b' }
+  fuego: { name: 'Fuego', glove: '#ff5a1f', gloveHi: '#ffd36b' },
+  violeta: { name: 'Violeta', glove: '#6b2fa3', gloveHi: '#cfa6ff' },
+  rosa: { name: 'Rosa', glove: '#e0558f', gloveHi: '#ffc2dc' }
 };
-const HATS = { piluso: { name: 'Piluso' } };
+const HATS = { piluso: { name: 'Piluso' }, gorra: { name: 'Gorra' }, vincha: { name: 'Vincha' }, galera: { name: 'Galera' }, corona: { name: 'Corona' } };
+// Camisetas de clubes argentinos: solo colores y diseño de bandas, sin escudos ni marcas.
+const SHIRTS = {
+  seleccion: { name: 'Selección', t: 'stripesV', c: ['#74acdf', '#ffffff'], k: '#1b2a4a' },
+  boca: { name: 'Boca Juniors', t: 'band', c: ['#0b3b8c', '#f2c300'], k: '#f2c300' },
+  river: { name: 'River Plate', t: 'sash', c: ['#ffffff', '#d61f26'], k: '#d61f26' },
+  racing: { name: 'Racing Club', t: 'stripesV', c: ['#6cb4e4', '#ffffff'], k: '#1b2a4a' },
+  independiente: { name: 'Independiente', t: 'solid', c: ['#d0101b'], k: '#ffffff' },
+  sanlorenzo: { name: 'San Lorenzo', t: 'stripesV', c: ['#1b2d6b', '#c8102e'], k: '#1b2d6b' },
+  huracan: { name: 'Huracán', t: 'solid', c: ['#ffffff'], k: '#d0101b' },
+  velez: { name: 'Vélez Sarsfield', t: 'vee', c: ['#ffffff', '#1d4fa0'], k: '#1d4fa0' },
+  estudiantes: { name: 'Estudiantes (LP)', t: 'stripesV', c: ['#d0101b', '#ffffff'], k: '#d0101b' },
+  gimnasia: { name: 'Gimnasia (LP)', t: 'band', c: ['#ffffff', '#13234b'], k: '#13234b' },
+  central: { name: 'Rosario Central', t: 'stripesV', c: ['#0a3d91', '#f6c700'], k: '#0a3d91' },
+  newells: { name: "Newell's Old Boys", t: 'halves', c: ['#d0101b', '#111111'], k: '#111111' },
+  talleres: { name: 'Talleres', t: 'stripesV', c: ['#0b2a6b', '#ffffff'], k: '#0b2a6b' },
+  belgrano: { name: 'Belgrano', t: 'solid', c: ['#74b6e6'], k: '#1b2a4a' },
+  instituto: { name: 'Instituto', t: 'stripesV', c: ['#c8102e', '#ffffff'], k: '#c8102e' },
+  lanus: { name: 'Lanús', t: 'solid', c: ['#7a1b2d'], k: '#ffffff' },
+  banfield: { name: 'Banfield', t: 'stripesV', c: ['#0a7a3a', '#ffffff'], k: '#0a7a3a' },
+  argentinos: { name: 'Argentinos Juniors', t: 'solid', c: ['#d0101b'], k: '#f2f2f2' },
+  platense: { name: 'Platense', t: 'band', c: ['#ffffff', '#5b3a1e'], k: '#5b3a1e' },
+  tigre: { name: 'Tigre', t: 'band', c: ['#0c2f6b', '#c8102e'], k: '#c8102e' },
+  defensa: { name: 'Defensa y Justicia', t: 'solid', c: ['#f2d000'], k: '#0a7a3a' },
+  godoycruz: { name: 'Godoy Cruz', t: 'stripesV', c: ['#0b2a6b', '#ffffff'], k: '#ffffff' },
+  union: { name: 'Unión', t: 'stripesV', c: ['#c8102e', '#ffffff'], k: '#ffffff' },
+  colon: { name: 'Colón', t: 'halves', c: ['#c8102e', '#111111'], k: '#c8102e' },
+  tucuman: { name: 'Atlético Tucumán', t: 'stripesV', c: ['#6cb4e4', '#ffffff'], k: '#6cb4e4' },
+  centralcba: { name: 'Central Córdoba', t: 'stripesV', c: ['#111111', '#ffffff'], k: '#111111' },
+  sarmiento: { name: 'Sarmiento', t: 'solid', c: ['#0a7a3a'], k: '#ffffff' },
+  rivadavia: { name: 'Independiente Rivadavia', t: 'solid', c: ['#0b3b8c'], k: '#ffffff' },
+  riestra: { name: 'Deportivo Riestra', t: 'solid', c: ['#111111'], k: '#ffffff' },
+  chacarita: { name: 'Chacarita', t: 'tri', c: ['#c8102e', '#ffffff', '#111111'], k: '#111111' },
+  ferro: { name: 'Ferro Carril Oeste', t: 'solid', c: ['#0b6b34'], k: '#ffffff' },
+  quilmes: { name: 'Quilmes', t: 'solid', c: ['#ffffff'], k: '#0b2a6b' },
+  arsenal: { name: 'Arsenal de Sarandí', t: 'sash', c: ['#6cb4e4', '#c8102e'], k: '#c8102e' },
+  atlanta: { name: 'Atlanta', t: 'stripesH', c: ['#0b2a6b', '#f2c300'], k: '#0b2a6b' },
+  aldosivi: { name: 'Aldosivi', t: 'stripesV', c: ['#0a7a3a', '#f2d000'], k: '#0a7a3a' },
+  chicago: { name: 'Nueva Chicago', t: 'stripesV', c: ['#0a7a3a', '#111111'], k: '#111111' },
+  patronato: { name: 'Patronato', t: 'stripesV', c: ['#c8102e', '#111111'], k: '#111111' },
+  olimpo: { name: 'Olimpo', t: 'stripesV', c: ['#f2c300', '#111111'], k: '#111111' }
+};
 // Recompensas del pase, una por nivel (100 XP cada uno).
 const XP_LEVEL = 100;
 const PASS = [
-  { glove: 'sangre' }, { glove: 'plata' }, { title: 'Mano Pesada' }, { hat: 'piluso' }, { glove: 'hielo' }, { glove: 'neon' },
-  { title: 'Cachetada Fantasma' }, { glove: 'carbon' }, { glove: 'oro' }, { title: 'Leyenda del Cachetazo' }, { glove: 'fuego' }, { ch: 'leo' }
+  { glove: 'sangre' }, { chest: 'c' }, { title: 'Mano Pesada' }, { hat: 'piluso' }, { pick: 1 },
+  { glove: 'plata' }, { chest: 'c' }, { hat: 'gorra' }, { glove: 'hielo' }, { pick: 1 },
+  { title: 'Cachetada Fantasma' }, { ch: 'leo' }, { glove: 'neon' }, { chest: 'e' }, { hat: 'galera' },
+  { pick: 1 }, { glove: 'oro' }, { title: 'Leyenda del Cachetazo' }, { chest: 'e' }, { ch: 'robin' }
 ];
 const CHALLENGES = [
   { ch: 'sanmartin', text: 'Jugá 3 peleas', need: 3, key: 'fights' },
@@ -1241,10 +1382,18 @@ const CHALLENGES = [
   { ch: 'jamaica', text: 'Ganá 25 duelos online', need: 25, key: 'wins' },
   { ch: 'monje', text: 'Hacé 10 contragolpes perfectos', need: 10, key: 'parries' },
   { ch: 'robot', text: 'Usá 20 poderes', need: 20, key: 'powers' },
-  { ch: 'vikingo', text: 'Ganá 5 peleas con un remate', need: 5, key: 'fins' },
+  { ch: 'vikingo', text: 'Hacé 5 remates después del K.O.', need: 5, key: 'fins' },
   { ch: 'barbanegra', text: 'Ganá 15 duelos online', need: 15, key: 'wins' },
-  { ch: 'momia', text: 'Ganá 3 torneos con amigos', need: 3, key: 'ftw' }
+  { ch: 'momia', text: 'Ganá 3 torneos con amigos', need: 3, key: 'ftw' },
+  { ch: 'abuela', text: 'Abrí 5 cofres', need: 5, key: 'opened' },
+  { ch: 'gaucho', text: 'Llevá un peleador al nivel 3', need: 3, key: 'maxfl' },
+  { ch: 'zombi', text: 'Perdé 10 peleas (algo bueno tenía que tener)', need: 10, key: 'losses' },
+  { ch: 'hercules', text: 'Ganá 30 duelos online', need: 30, key: 'wins' }
 ];
+// Niveles de cada peleador según cuántas veces ganaste con él.
+const FLV = [0, 3, 7, 12, 20];
+const FL_PERKS = ['', 'Skin Rojo sangre', 'Arranca cada pelea con 20 de energía', 'Skin Dorado', 'Skin Leyenda y la energía se carga 10% más rápido'];
+const SKINS = { rojo: { name: 'Rojo sangre', lv: 2, tint: '#b3121b', glove: 'sangre' }, oro: { name: 'Dorado', lv: 4, tint: '#d4a017', glove: 'oro' }, leyenda: { name: 'Leyenda', lv: 5, tint: '#ff6a1f', glove: 'fuego', aura: true } };
 const TOUR = [{ name: 'Cuartos de final' }, { name: 'Semifinal' }, { name: 'Final' }];
 // Dificultad de la máquina: probabilidad de cubrirse, de esquivar, tiempo de reacción y descanso extra.
 const BOTLV = [
@@ -1258,23 +1407,75 @@ const PROG_KEY = 'cachetazo-prog';
 const prog = (() => {
   let p = {};
   try { p = JSON.parse(localStorage.getItem(PROG_KEY) || '{}') || {}; } catch (e) { p = {}; }
-  const d = { xp: 0, streak: 0, best: 0, tours: 0, fights: 0, wins: 0, ftw: 0, parries: 0, powers: 0, fins: 0, chars: {}, gloves: {}, titles: {}, hats: {}, gl: '', hat: '' };
-  for (const k in d) if (typeof p[k] !== typeof d[k] || p[k] === null) p[k] = d[k];
+  const d = { xp: 0, streak: 0, best: 0, tours: 0, fights: 0, wins: 0, losses: 0, ftw: 0, parries: 0, powers: 0, fins: 0, opened: 0,
+    chests: 0, epics: 0, chestProg: 0, picks: 0, claimed: -1, chars: {}, gloves: {}, titles: {}, hats: {}, shirts: {}, fl: {}, skin: {}, gl: '', hat: '', sh: '', custom: null };
+  for (const k in d) if (p[k] === undefined || p[k] === null || typeof p[k] !== typeof d[k]) p[k] = d[k];
+  p.shirts.seleccion = 1;
   return p;
 })();
 function saveProg() { try { localStorage.setItem(PROG_KEY, JSON.stringify(prog)); } catch (e) {} }
-function owns(ch) { return !!FIGHTERS[ch] && (!FIGHTERS[ch].hist || !!prog.chars[ch]); }
+function owns(ch) { if (ch === 'custom') return !!prog.custom; return !!FIGHTERS[ch] && (!FIGHTERS[ch].hist || !!prog.chars[ch]); }
 function passLevel(xp) { return Math.min(PASS.length, Math.floor(xp / XP_LEVEL)); }
 function myTitle() { for (let i = PASS.length - 1; i >= 0; i--) if (PASS[i].title && prog.titles[PASS[i].title]) return PASS[i].title; return ''; }
 function reqText(ch) {
+  if (ch === 'custom') return 'Tocalo para crearlo';
   const c = CHALLENGES.find(x => x.ch === ch); if (c) return c.text;
   const i = PASS.findIndex(x => x.ch === ch); return i >= 0 ? 'Pase de batalla, nivel ' + (i + 1) : '';
 }
-function progVal(key) { return num(prog[key], 0); }
+function flWins(ch) { return num(prog.fl[ch], 0); }
+function flLevel(ch) { let l = 1; FLV.forEach((w, i) => { if (flWins(ch) >= w) l = i + 1; }); return l; }
+function maxFl() { let m = 1; for (const ch in prog.fl) m = Math.max(m, flLevel(ch)); return m; }
+function progVal(key) { return key === 'maxfl' ? maxFl() : num(prog[key], 0); }
 function checkUnlocks(got) {
   for (const c of CHALLENGES) if (progVal(c.key) >= c.need && !prog.chars[c.ch]) { prog.chars[c.ch] = 1; got.push('Personaje nuevo: ' + FIGHTERS[c.ch].nick); }
 }
-// Poderes: cada personaje cambia alguna de estas reglas.
+// Entrega las recompensas del pase hasta el nivel actual que todavía no se dieron.
+function claimPass(got) {
+  const lv = passLevel(prog.xp);
+  while (prog.claimed < lv - 1) {
+    prog.claimed++;
+    const r = PASS[prog.claimed];
+    if (r.glove && !prog.gloves[r.glove]) { prog.gloves[r.glove] = 1; got.push('Guantes ' + GLOVES[r.glove].name); }
+    if (r.title && !prog.titles[r.title]) { prog.titles[r.title] = 1; got.push('Título: ' + r.title); }
+    if (r.hat && !prog.hats[r.hat]) { prog.hats[r.hat] = 1; got.push('Gorro ' + HATS[r.hat].name); }
+    if (r.ch && !prog.chars[r.ch]) { prog.chars[r.ch] = 1; got.push('Personaje nuevo: ' + FIGHTERS[r.ch].nick); }
+    if (r.chest === 'c') { prog.chests++; got.push('Cofre común'); }
+    if (r.chest === 'e') { prog.epics++; got.push('Cofre épico'); }
+    if (r.pick) { prog.picks++; got.push('Camiseta a elección'); }
+  }
+}
+
+/* ---- personaje creado por el jugador ---- */
+const CU = {
+  sk: ['#f1c7a5', '#e3b48f', '#d39b74', '#b97a50', '#8a5a3c', '#5e3b26'],
+  hs: [['buzz', 'Corto'], ['bald', 'Pelado'], ['fade', 'Degradé'], ['swept', 'Peinado'], ['long', 'Largo'], ['dreads', 'Rastas'], ['bob', 'Melena'], ['slick', 'Engominado'], ['roman', 'Flequillo'], ['curly', 'Rulos'], ['bun', 'Rodete']],
+  hc: ['#110c0b', '#3a2418', '#7a4a22', '#b5541c', '#d9b25c', '#d9d3c9', '#2f5fd0', '#d0306a'],
+  bd: [['none', 'Sin barba'], ['full', 'Completa'], ['trim', 'Candado'], ['sideburns', 'Patillas'], ['mustache', 'Bigote'], ['fumanchu', 'Bigote largo'], ['goatee', 'Chivita'], ['long', 'Larga']],
+  br: [['straight', 'Rectas'], ['arched', 'Arqueadas'], ['bushy', 'Gruesas']],
+  of: [['', 'Pecho al aire'], ['toga', 'Toga'], ['coat', 'Casaca'], ['granadero', 'Granadero'], ['robe', 'Túnica'], ['monk', 'Hábito'], ['pirate', 'Pirata'], ['fur', 'Pieles'], ['inverness', 'Capa'], ['poncho', 'Poncho'], ['cardigan', 'Saquito'], ['tunic', 'Arquero']],
+  ht: [['', 'Nada'], ['laurel', 'Laureles'], ['bicorne', 'Bicornio'], ['beret', 'Boina'], ['tricorne', 'Tricornio'], ['horns', 'Casco con cuernos'], ['deerstalker', 'Gorra de detective'], ['feather', 'Gorro con pluma']],
+  ps: [['hp', 'Más vida', 'Tiene 6 vidas.'], ['guard', 'Guardia dura', 'Su guardia aguanta 7 golpes.'], ['rest', 'Descanso corto', 'Descansa 2,5 s entre tandas.'], ['dodge', 'Esquive rápido', 'Su esquive se recarga casi al instante.'], ['energy', 'Energía rápida', 'La energía se le carga un 30% más rápido.']],
+  sp: ['heavy', 'blast', 'flurry', 'stun', 'drain', 'heal', 'smoke', 'shield']
+};
+function cleanCustom(d) {
+  if (!d || typeof d !== 'object') return null;
+  const ix = (v, arr) => { const n = Math.floor(num(v, 0)); return n >= 0 && n < arr.length ? n : 0; };
+  return { n: cleanName(d.n) === 'Rival' && !d.n ? 'MI PELEADOR' : cleanName(d.n).toUpperCase(), sk: ix(d.sk, CU.sk), hs: ix(d.hs, CU.hs), hc: ix(d.hc, CU.hc), bd: ix(d.bd, CU.bd), br: ix(d.br, CU.br), of: ix(d.of, CU.of), ht: ix(d.ht, CU.ht), ps: ix(d.ps, CU.ps), sp: ix(d.sp, CU.sp) };
+}
+function buildCustom(d) {
+  const c = cleanCustom(d) || cleanCustom({});
+  const p = CU.ps[c.ps][0], spT = CU.sp[c.sp];
+  const F = { nick: c.n, custom: true, skin: CU.sk[c.sk], shade: shadeOf(CU.sk[c.sk]), hair: CU.hc[c.hc], glove: '#2a2a30', gloveHi: '#6a6a76', hairStyle: CU.hs[c.hs][0], beard: CU.bd[c.bd][0], brow: CU.br[c.br][0],
+    outfit: CU.of[c.of][0] || undefined, hat: CU.ht[c.ht][0] || undefined, sp: [spT, SPECIALS[spT].name], power: [CU.ps[c.ps][1], CU.ps[c.ps][2]] };
+  if (p === 'hp') F.hp = 6; if (p === 'guard') F.guard = 7; if (p === 'rest') F.rest = 2500; if (p === 'dodge') F.dodgeCd = 550; if (p === 'energy') F.enRate = 1.3;
+  return F;
+}
+function shadeOf(hex) { const n = parseInt(hex.slice(1), 16), f = 0.75; return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v * f).toString(16).padStart(2, '0')).join(''); }
+prog.custom = cleanCustom(prog.custom);
+FIGHTERS.custom = buildCustom(prog.custom);
+FIGHTERS.opcustom = buildCustom(null);
+
+// Habilidades: cada personaje cambia alguna de estas reglas.
 const pw = ch => FIGHTERS[ch] || FIGHTERS.a;
 const maxHp = ch => pw(ch).hp || LIVES;
 const guardMax = ch => pw(ch).guard || BLOCK_BREAK;
@@ -1285,12 +1486,17 @@ const dodgeMsOf = ch => pw(ch).dodgeMs || DODGE_MS;
 const dodgeCdOf = ch => pw(ch).dodgeCd || DODGE_CD;
 const myMaxHp = () => maxHp(st.ch) + st.myBonus;
 const oppMaxHp = () => maxHp(st.opp.ch) + st.oppBonus;
-const lookCache = {};
-function look(ch, gl) {
-  const k = ch + '|' + (gl || '');
-  if (!lookCache[k]) { const F = FIGHTERS[ch] || FIGHTERS.a, G = GLOVES[gl]; lookCache[k] = G ? Object.assign({}, F, { glove: G.glove, gloveHi: G.gloveHi }) : F; }
+function chNick(P) { if (!P) return 'BARBA'; if (P.ch === 'custom') return cleanCustom(P.cu) ? cleanCustom(P.cu).n : 'CREADO'; return FIGHTERS[P.ch] && P.ch !== 'opcustom' ? FIGHTERS[P.ch].nick : 'BARBA'; }
+let lookCache = {};
+function look(ch, gl, sk) {
+  const k = ch + '|' + (gl || '') + '|' + (sk || '');
+  if (!lookCache[k]) {
+    const F = FIGHTERS[ch] || FIGHTERS.a, G = GLOVES[gl] || (SKINS[sk] ? GLOVES[SKINS[sk].glove] : null);
+    lookCache[k] = G ? Object.assign({}, F, { glove: G.glove, gloveHi: G.gloveHi }) : F;
+  }
   return lookCache[k];
 }
+function mySkin() { const s = prog.skin[st.ch]; return SKINS[s] && flLevel(st.ch) >= SKINS[s].lv ? s : ''; }
 const EDGE = '#0a0405';
 
 function drawHand(x, y, s, rot, flip, alpha, opt) {
@@ -1408,6 +1614,8 @@ function bustTorso(F, cx, hy, u, botY, inner) {
   torsoPath(cx, hy, u, botY); ctx.fillStyle = F.skin; ctx.fill();
   ctx.save(); torsoPath(cx, hy, u, botY); ctx.clip();
   inner();
+  if (curFx && SHIRTS[curFx.shirt]) drawShirt(SHIRTS[curFx.shirt], cx, hy, u, botY);
+  if (curFx && SKINS[curFx.skin] && !SHIRTS[curFx.shirt]) { ctx.save(); ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = 0.6; ctx.fillStyle = SKINS[curFx.skin].tint; ctx.fillRect(X(-50), Y(13), 100 * u, Math.max(1, botY - Y(13))); ctx.restore(); }
   let g = ctx.createLinearGradient(0, Y(30), 0, Y(68)); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.6)');
   ctx.fillStyle = g; ctx.fillRect(X(-50), Y(30), 100 * u, Math.max(1, botY - Y(30)));
   g = ctx.createLinearGradient(0, Y(9), 0, Y(20)); g.addColorStop(0, 'rgba(0,0,0,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
@@ -1416,6 +1624,62 @@ function bustTorso(F, cx, hy, u, botY, inner) {
   ctx.restore();
   torsoPath(cx, hy, u, botY); ctx.strokeStyle = EDGE; ctx.lineWidth = Math.max(1.4, 0.6 * u); ctx.stroke();
 }
+let curFx = null;
+function drawAura(cx, hy, u, t) {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 14; i++) {
+    const a = Math.PI * (1.05 + i * 0.9 / 13), fl = Math.sin(t / 140 + i * 1.7) * 2.5;
+    const x = cx + Math.cos(a) * (19 + fl) * u, y = hy + 4 * u + Math.sin(a) * (24 + fl) * u, r = (5 + (i % 3) * 1.5) * u;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, 'rgba(255,190,80,0.55)'); g.addColorStop(1, 'rgba(255,80,20,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawShirt(S, cx, hy, u, botY) {
+  const X = x => cx + x * u, Y = y => hy + y * u, top = Y(13.5), h = Math.max(1, botY - top), L = X(-50), Wd = 100 * u, c = S.c;
+  ctx.fillStyle = c[0]; ctx.fillRect(L, top, Wd, h);
+  if (S.t === 'stripesV' || S.t === 'tri') { for (let k = -51, i = 0; k < 50; k += 6, i++) { ctx.fillStyle = c[i % c.length]; ctx.fillRect(X(k), top, 6 * u + 0.5, h); } }
+  else if (S.t === 'stripesH') { for (let k = 13.5, i = 0; k < 140; k += 6, i++) { ctx.fillStyle = c[i % 2]; ctx.fillRect(L, Y(k), Wd, 6 * u + 0.5); } }
+  else if (S.t === 'band') { ctx.fillStyle = c[1]; ctx.fillRect(L, Y(28), Wd, 9 * u); }
+  else if (S.t === 'sash') { ctx.strokeStyle = c[1]; ctx.lineWidth = 9 * u; ctx.beginPath(); ctx.moveTo(X(-36), Y(12)); ctx.lineTo(X(36), Y(72)); ctx.stroke(); }
+  else if (S.t === 'halves') { ctx.fillStyle = c[1]; ctx.fillRect(cx, top, 50 * u, h); }
+  else if (S.t === 'vee') { ctx.fillStyle = c[1]; ctx.beginPath(); ctx.moveTo(X(-30), Y(13.5)); ctx.lineTo(X(-22), Y(13.5)); ctx.lineTo(cx, Y(40)); ctx.lineTo(X(22), Y(13.5)); ctx.lineTo(X(30), Y(13.5)); ctx.lineTo(cx, Y(48)); ctx.closePath(); ctx.fill(); }
+  ctx.strokeStyle = S.k; ctx.lineWidth = 1.4 * u; ctx.beginPath(); ctx.ellipse(cx, Y(12.5), 8.5 * u, 4 * u, 0, 0.05 * Math.PI, 0.95 * Math.PI); ctx.stroke();
+}
+function shirtCss(S) {
+  const c = S.c;
+  if (S.t === 'stripesV') return 'repeating-linear-gradient(90deg,' + c[0] + ' 0 4px,' + c[1] + ' 4px 8px)';
+  if (S.t === 'tri') return 'repeating-linear-gradient(90deg,' + c[0] + ' 0 3px,' + c[1] + ' 3px 6px,' + c[2] + ' 6px 9px)';
+  if (S.t === 'stripesH') return 'repeating-linear-gradient(0deg,' + c[0] + ' 0 3px,' + c[1] + ' 3px 6px)';
+  if (S.t === 'band') return 'linear-gradient(' + c[0] + ' 38%,' + c[1] + ' 38% 62%,' + c[0] + ' 62%)';
+  if (S.t === 'sash') return 'linear-gradient(45deg,' + c[0] + ' 40%,' + c[1] + ' 40% 60%,' + c[0] + ' 60%)';
+  if (S.t === 'halves') return 'linear-gradient(90deg,' + c[0] + ' 50%,' + c[1] + ' 50%)';
+  if (S.t === 'vee') return 'linear-gradient(' + c[0] + ',' + c[0] + '),' + c[0];
+  return c[0];
+}
+// Gorros que se ganan (se dibujan sobre cualquier peleador).
+function drawCap(cap, cx, hy, u) {
+  if (cap === 'piluso') return drawPiluso(cx, hy, u);
+  const X = x => cx + x * u, Y = y => hy + y * u;
+  ctx.save(); ctx.lineJoin = 'round'; ctx.strokeStyle = EDGE; ctx.lineWidth = Math.max(1.4, 0.6 * u);
+  if (cap === 'gorra') {
+    ctx.fillStyle = '#1d3b8c'; ctx.beginPath(); ctx.moveTo(X(-14), Y(-7)); ctx.quadraticCurveTo(X(-14), Y(-21), cx, Y(-21.5)); ctx.quadraticCurveTo(X(14), Y(-21), X(14), Y(-7)); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#142a63'; ctx.beginPath(); ctx.moveTo(X(-12), Y(-7.6)); ctx.quadraticCurveTo(cx, Y(-0.5), X(12), Y(-7.6)); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#f2c300'; ctx.beginPath(); ctx.arc(cx, Y(-21.4), 1.3 * u, 0, Math.PI * 2); ctx.fill();
+  } else if (cap === 'vincha') {
+    ctx.strokeStyle = '#d0101b'; ctx.lineWidth = 3.2 * u; ctx.beginPath(); ctx.ellipse(cx, Y(-6.8), 13.6 * u, 4 * u, 0, Math.PI, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1.6 * u; ctx.beginPath(); ctx.moveTo(X(13.4), Y(-6.5)); ctx.lineTo(X(18), Y(-2)); ctx.moveTo(X(13.4), Y(-6.5)); ctx.lineTo(X(19), Y(-6)); ctx.stroke();
+  } else if (cap === 'galera') {
+    ctx.fillStyle = '#121214'; ctx.beginPath(); ctx.ellipse(cx, Y(-11), 17 * u, 3.6 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    rr(X(-10), Y(-32), 20 * u, 21 * u, 2 * u); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#7a1b2d'; ctx.fillRect(X(-10), Y(-15.5), 20 * u, 3 * u);
+  } else if (cap === 'corona') {
+    ctx.fillStyle = '#e2b02c'; ctx.beginPath(); ctx.moveTo(X(-12), Y(-9)); ctx.lineTo(X(-12.5), Y(-21)); ctx.lineTo(X(-6), Y(-15)); ctx.lineTo(cx, Y(-24)); ctx.lineTo(X(6), Y(-15)); ctx.lineTo(X(12.5), Y(-21)); ctx.lineTo(X(12), Y(-9)); ctx.closePath(); ctx.fill(); ctx.stroke();
+    [['#c0242c', -7], ['#1f6fd0', 0], ['#c0242c', 7]].forEach(([c, x]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(X(x), Y(-11.6), 1.3 * u, 0, Math.PI * 2); ctx.fill(); });
+  }
+  ctx.restore();
+}
+
 function drawPiluso(cx, hy, u) {
   const X = x => cx + x * u, Y = y => hy + y * u;
   ctx.save(); ctx.lineJoin = 'round'; ctx.strokeStyle = EDGE; ctx.lineWidth = Math.max(1.4, 0.6 * u);
@@ -1455,6 +1719,8 @@ function eyePair(F, fx, cx, ey, u, opts) {
 // Busto de un peleador visto de frente. Se usa para el rival en el ring y para los retratos del menú.
 function drawBust(ch, cx, hy, u, botY, fx) {
   const F = FIGHTERS[ch] || FIGHTERS.a;
+  curFx = fx;
+  if (SKINS[fx.skin] && SKINS[fx.skin].aura) drawAura(cx, hy, u, fx.t || 0);
   if (F.species === 'bear') return drawBear(F, cx, hy, u, botY, fx);
   if (F.species === 'cookie') return drawCookie(F, cx, hy, u, botY, fx);
   if (F.species === 'robot') return drawRobot(F, cx, hy, u, botY, fx);
@@ -1564,6 +1830,31 @@ function drawBust(ch, cx, hy, u, botY, fx) {
       for (let i = 0; i <= 22; i++) ctx.lineTo(X(-44 + i * 4), Y(i % 2 ? 26 : 30));
       ctx.lineTo(X(44), Y(18)); ctx.quadraticCurveTo(X(26), Y(12), X(8), Y(12.5)); ctx.lineTo(X(-8), Y(12.5)); ctx.quadraticCurveTo(X(-26), Y(12), X(-44), Y(18)); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = EDGE; ctx.lineWidth = lw * 0.7; ctx.stroke();
+    } else if (F.outfit === 'cardigan') {
+      ctx.fillStyle = '#8e6fa8'; ctx.fillRect(X(-50), Y(13.5), 100 * u, below(13.5));
+      ctx.fillStyle = '#f4efe6'; ctx.beginPath(); ctx.moveTo(X(-6), Y(13.5)); ctx.lineTo(X(6), Y(13.5)); ctx.lineTo(X(2.5), Y(30)); ctx.lineTo(X(-2.5), Y(30)); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#f4efe6'; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(X(5.2), Y(33 + i * 6), 0.9 * u, 0, Math.PI * 2); ctx.fill(); }
+      ctx.strokeStyle = '#6d528a'; ctx.lineWidth = 0.6 * u; ctx.beginPath(); ctx.moveTo(X(3.6), Y(30)); ctx.lineTo(X(3.6), botY); ctx.stroke();
+    } else if (F.outfit === 'poncho') {
+      ctx.fillStyle = '#a3202a'; ctx.fillRect(X(-50), Y(13.5), 100 * u, below(13.5));
+      ctx.fillStyle = '#141416'; [26, 30.5, 50, 54.5].forEach(y => ctx.fillRect(X(-50), Y(y), 100 * u, 2 * u));
+      ctx.fillStyle = '#f2ede4'; ctx.beginPath(); ctx.moveTo(X(-7), Y(13)); ctx.lineTo(X(7), Y(13)); ctx.lineTo(cx, Y(22)); ctx.closePath(); ctx.fill();
+    } else if (F.outfit === 'tunic') {
+      ctx.fillStyle = '#3d6b2a'; ctx.fillRect(X(-50), Y(13.5), 100 * u, below(13.5));
+      ctx.strokeStyle = '#2a4a1d'; ctx.lineWidth = 0.8 * u; ctx.beginPath(); ctx.moveTo(X(-5), Y(13.5)); ctx.lineTo(cx, Y(24)); ctx.lineTo(X(5), Y(13.5)); ctx.stroke();
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(X(-3 + i * 0.6), Y(16 + i * 2.6)); ctx.lineTo(X(3 - i * 0.6), Y(16 + i * 2.6)); ctx.stroke(); }
+      ctx.fillStyle = '#5a3418'; ctx.fillRect(X(-50), Y(46), 100 * u, 3.4 * u); ctx.fillStyle = '#c9a227'; rr(X(-2.4), Y(45.6), 4.8 * u, 4.2 * u, 0.8 * u); ctx.fill();
+    } else if (F.outfit === 'torn') {
+      ctx.fillStyle = '#5a6d7a'; ctx.fillRect(X(-50), Y(13.5), 100 * u, below(13.5));
+      ctx.fillStyle = F.skin;
+      [[-18, 30], [8, 40], [-6, 56], [20, 24]].forEach(([x, y]) => { ctx.beginPath(); ctx.moveTo(X(x), Y(y)); ctx.lineTo(X(x + 6), Y(y + 2)); ctx.lineTo(X(x + 2), Y(y + 7)); ctx.closePath(); ctx.fill(); });
+      ctx.strokeStyle = '#3e4c56'; ctx.lineWidth = 0.6 * u; ctx.beginPath(); ctx.moveTo(X(-8), Y(13.5)); ctx.lineTo(X(-4), Y(22)); ctx.lineTo(X(2), Y(13.5)); ctx.stroke();
+    } else if (F.outfit === 'lion') {
+      ctx.fillStyle = '#c98d34'; ctx.beginPath(); ctx.moveTo(X(-44), Y(30));
+      for (let i = 0; i <= 22; i++) ctx.lineTo(X(-44 + i * 4), Y(i % 2 ? 27 : 31));
+      ctx.lineTo(X(44), Y(18)); ctx.quadraticCurveTo(X(26), Y(12), X(8), Y(12.5)); ctx.lineTo(X(-8), Y(12.5)); ctx.quadraticCurveTo(X(-26), Y(12), X(-44), Y(18)); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = EDGE; ctx.lineWidth = lw * 0.7; ctx.stroke();
+      ctx.fillStyle = '#8a5a1e'; for (const sg of [-1, 1]) { ctx.beginPath(); ctx.ellipse(X(sg * 24), Y(34), 4 * u, 3 * u, 0, 0, Math.PI * 2); ctx.fill(); }
     } else if (F.outfit === 'arg') {
       ctx.fillStyle = '#ffffff'; ctx.fillRect(X(-50), Y(13.5), 100 * u, below(13.5));
       ctx.fillStyle = '#74acdf'; for (let k = -51; k < 50; k += 12) ctx.fillRect(X(k), Y(13.5), 6 * u, below(13.5));
@@ -1580,7 +1871,7 @@ function drawBust(ch, cx, hy, u, botY, fx) {
     }
   });
   // orejas
-  if (F.hairStyle !== 'bob' && F.hairStyle !== 'long' && F.hairStyle !== 'wraps') {
+  if (F.hairStyle !== 'bob' && F.hairStyle !== 'long' && F.hairStyle !== 'wraps' && F.hairStyle !== 'dreads') {
     ctx.fillStyle = F.skin; ctx.strokeStyle = EDGE; ctx.lineWidth = lw;
     for (const sg of [-1, 1]) { ctx.beginPath(); ctx.ellipse(X(sg * 13), Y(1), 2.6 * u, 4 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
   }
@@ -1591,7 +1882,7 @@ function drawBust(ch, cx, hy, u, botY, fx) {
   const cap = (pts) => { ctx.beginPath(); ctx.moveTo(X(pts[0][0]), Y(pts[0][1])); for (let i = 1; i < pts.length; i += 2) ctx.quadraticCurveTo(X(pts[i][0]), Y(pts[i][1]), X(pts[i + 1][0]), Y(pts[i + 1][1])); ctx.lineTo(X(15), Y(-20)); ctx.lineTo(X(-15), Y(-20)); ctx.closePath(); ctx.fill(); };
   ctx.fillStyle = F.hair;
   const hs = F.hairStyle;
-  if (hs === 'buzz') cap([[-14, -5], [-12, -10.6], [-6, -10.6], [0, -9.3], [6, -10.6], [12, -10.6], [14, -5]]);
+  if (hs === 'buzz' || hs === 'curly') cap([[-14, -5], [-12, -10.6], [-6, -10.6], [0, -9.3], [6, -10.6], [12, -10.6], [14, -5]]);
   else if (hs === 'fade') {
     ctx.fillStyle = 'rgba(52,36,31,0.6)'; cap([[-14, -2], [-12.5, -9], [-7, -10], [0, -11], [7, -10], [12.5, -9], [14, -2]]);
     ctx.fillStyle = F.hair; ctx.fillRect(X(-14), Y(-4.5), 3.2 * u, 6 * u); ctx.fillRect(X(10.8), Y(-4.5), 3.2 * u, 6 * u);
@@ -1603,7 +1894,7 @@ function drawBust(ch, cx, hy, u, botY, fx) {
     ctx.fillRect(X(-15), Y(-20), 30 * u, 12.4 * u);
     ctx.fillRect(X(-15), Y(-8), 3.4 * u, 26 * u); ctx.fillRect(X(11.6), Y(-8), 3.4 * u, 26 * u);
   } else if (hs === 'napo') cap([[-14, -4], [-12, -11], [-5, -11], [-1.5, -7.6], [2, -10], [9, -11.5], [14, -4]]);
-  else if (hs === 'long' || hs === 'dreads') cap([[-14, -2], [-12, -12], [0, -12.5], [12, -12], [14, -2]]);
+  else if (hs === 'long' || hs === 'dreads' || hs === 'bun') cap([[-14, -2], [-12, -12], [0, -12.5], [12, -12], [14, -2]]);
   else if (hs === 'wraps') {
     ctx.strokeStyle = '#b9ad90'; ctx.lineWidth = 1.2 * u;
     for (let k = -22; k <= 22; k += 3.6) { ctx.beginPath(); ctx.moveTo(X(-16), Y(k)); ctx.lineTo(X(16), Y(k + 5)); ctx.stroke(); }
@@ -1655,6 +1946,9 @@ function drawBust(ch, cx, hy, u, botY, fx) {
   } else if (hs === 'dreads') {
     for (let i = -4; i <= 4; i++) { ctx.beginPath(); ctx.ellipse(X(i * 2.9), Y(-15 + Math.abs(i) * 0.9), 1.6 * u, 3 * u, i * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
   }
+  if (hs === 'bun') { ctx.fillStyle = F.hair; ctx.beginPath(); ctx.arc(cx, Y(-16.5), 5 * u, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+  if (hs === 'curly') { ctx.fillStyle = F.hair; for (let i = 0; i <= 10; i++) { const a = Math.PI * (1.02 + i * 0.96 / 10); ctx.beginPath(); ctx.arc(cx + Math.cos(a) * 12.6 * u, Y(-1.5) + Math.sin(a) * 14.5 * u, 2.8 * u, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } }
+  ctx.fillStyle = F.hair;
   if (F.beard === 'full') {
     ctx.beginPath(); ctx.ellipse(cx, Y(12.2), 10.4 * u, 7.6 * u, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx, Y(12.2), 10.4 * u, 7.6 * u, 0, 0.15, Math.PI - 0.15); ctx.stroke();
@@ -1681,6 +1975,17 @@ function drawBust(ch, cx, hy, u, botY, fx) {
     else { ctx.lineWidth = (F.brow === 'bushy' || F.brow === 'bushyRed' ? 2.2 : 1.7) * u; ctx.moveTo(ex - sg * 3 * u, ey - 2.6 * u); ctx.lineTo(ex + sg * 3 * u, ey - 3.7 * u); }
     ctx.stroke(); ctx.restore();
   }
+  if (F.glasses) {
+    ctx.save(); ctx.strokeStyle = '#3a2c2c'; ctx.lineWidth = 0.6 * u;
+    for (const sg of [-1, 1]) { ctx.beginPath(); ctx.arc(X(sg * 5), ey, 2.9 * u, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(X(-2.1), ey); ctx.quadraticCurveTo(cx, ey - 1 * u, X(2.1), ey); ctx.stroke(); ctx.restore();
+  }
+  if (F.stitches) {
+    ctx.save(); ctx.strokeStyle = '#3a2a22'; ctx.lineWidth = 0.5 * u;
+    ctx.beginPath(); ctx.moveTo(X(-10), Y(-7)); ctx.lineTo(X(-2), Y(-9.5)); ctx.stroke();
+    for (let i = 0; i < 5; i++) { const x = -9.2 + i * 1.7, y = -7.3 - i * 0.5; ctx.beginPath(); ctx.moveTo(X(x), Y(y - 1)); ctx.lineTo(X(x + 0.4), Y(y + 1)); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(X(7), Y(3)); ctx.lineTo(X(10), Y(8)); ctx.stroke(); ctx.restore();
+  }
   ctx.strokeStyle = F.shade; ctx.lineWidth = Math.max(1.5, 0.75 * u); ctx.beginPath(); ctx.moveTo(X(-0.4), Y(0.6)); ctx.quadraticCurveTo(X(1.8), Y(3.8), X(-0.9), Y(4.2)); ctx.stroke();
   const pain = fx.hurt || fx.ko;
   if (pain) { ctx.fillStyle = '#5a0b12'; ctx.strokeStyle = '#d98a7c'; ctx.lineWidth = 0.6 * u; ctx.beginPath(); ctx.ellipse(cx, Y(8.8), 2.2 * u, 2.6 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
@@ -1693,6 +1998,9 @@ function drawBust(ch, cx, hy, u, botY, fx) {
     ctx.strokeStyle = F.hair; ctx.lineWidth = 1.5 * u;
     for (const sg of [-1, 1]) { ctx.beginPath(); ctx.moveTo(X(sg * 0.6), Y(6.4)); ctx.quadraticCurveTo(X(sg * 5.4), Y(6.6), X(sg * 5.2), Y(17)); ctx.stroke(); }
   }
+  if (F.beard === 'mustache') {
+    ctx.fillStyle = F.hair; ctx.beginPath(); ctx.moveTo(X(-6.4), Y(8)); ctx.quadraticCurveTo(X(-3.4), Y(4.4), cx, Y(6)); ctx.quadraticCurveTo(X(3.4), Y(4.4), X(6.4), Y(8)); ctx.quadraticCurveTo(cx, Y(6.9), X(-6.4), Y(8)); ctx.closePath(); ctx.fill();
+  }
   if (F.pipe && !pain) {
     ctx.strokeStyle = '#4a2e1c'; ctx.lineWidth = 1.3 * u; ctx.beginPath(); ctx.moveTo(X(2.4), Y(9)); ctx.quadraticCurveTo(X(6.5), Y(12.5), X(8.6), Y(10.6)); ctx.stroke();
     ctx.fillStyle = '#4a2e1c'; ctx.strokeStyle = EDGE; ctx.lineWidth = 0.5 * u; rr(X(7.6), Y(6.6), 3.2 * u, 4.6 * u, 1 * u); ctx.fill(); ctx.stroke();
@@ -1700,8 +2008,12 @@ function drawBust(ch, cx, hy, u, botY, fx) {
   if (F.joint && !pain) drawJoint(cx, hy, u, fx.t);
   // sombreros y coronas
   ctx.lineWidth = lw; ctx.strokeStyle = EDGE;
-  const hat = fx.cap === 'piluso' ? 'piluso' : F.hat;
-  if (hat === 'piluso') drawPiluso(cx, hy, u);
+  const hat = HATS[fx.cap] ? fx.cap : F.hat;
+  if (HATS[hat]) drawCap(hat, cx, hy, u);
+  else if (hat === 'feather') {
+    ctx.fillStyle = '#3d6b2a'; ctx.beginPath(); ctx.moveTo(X(-14.5), Y(-6.5)); ctx.quadraticCurveTo(X(-8), Y(-22), X(17), Y(-17)); ctx.lineTo(X(14.5), Y(-6.5)); ctx.quadraticCurveTo(cx, Y(-9), X(-14.5), Y(-6.5)); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.save(); ctx.translate(X(7), Y(-16)); ctx.rotate(-0.9); ctx.fillStyle = '#c0242c'; ctx.beginPath(); ctx.ellipse(0, -5 * u, 1.6 * u, 6 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
+  }
   else if (hat === 'laurel') {
     for (let i = 0; i < 16; i++) {
       const t = Math.PI * (1.06 + i * 0.88 / 15), x = cx + Math.cos(t) * 14.2 * u, y = Y(-5.5) + Math.sin(t) * 11.5 * u;
@@ -1720,7 +2032,7 @@ function drawBust(ch, cx, hy, u, botY, fx) {
     ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 0.9 * u; ctx.beginPath(); ctx.moveTo(X(-24), Y(-8.6)); ctx.quadraticCurveTo(cx, Y(-15.5), X(24), Y(-8.6)); ctx.stroke();
     [['#1f3a93', 3.2], ['#f2efe8', 2.2], ['#c0242c', 1.2]].forEach(([c, r]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(X(9), Y(-20), r * u, 0, Math.PI * 2); ctx.fill(); });
   } else if (hat === 'beret') {
-    ctx.fillStyle = '#2b1d1a';
+    ctx.fillStyle = F.hatColor || '#2b1d1a';
     ctx.beginPath(); ctx.ellipse(X(1.5), Y(-12.5), 15.5 * u, 6.5 * u, -0.08, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.arc(X(2), Y(-18.6), 1.1 * u, 0, Math.PI * 2); ctx.fill();
   } else if (hat === 'tricorne') {
@@ -1773,7 +2085,7 @@ function drawBear(F, cx, hy, u, botY, fx) {
   ctx.strokeStyle = EDGE; ctx.lineWidth = Math.max(1.2, 0.6 * u);
   if (fx.hurt || fx.ko) { ctx.fillStyle = '#5a0b12'; ctx.beginPath(); ctx.ellipse(cx, Y(8), 1.8 * u, 2.3 * u, 0, 0, Math.PI * 2); ctx.fill(); }
   else { ctx.beginPath(); ctx.moveTo(cx, Y(4.2)); ctx.lineTo(cx, Y(6.4)); ctx.moveTo(X(-3), Y(6.6)); ctx.quadraticCurveTo(cx, Y(9), X(3), Y(6.6)); ctx.stroke(); }
-  if (fx.cap === 'piluso') drawPiluso(cx, hy - 1 * u, u);
+  if (HATS[fx.cap]) drawCap(fx.cap, cx, hy - 1 * u, u);
   ctx.restore();
 }
 
@@ -1803,7 +2115,7 @@ function drawRobot(F, cx, hy, u, botY, fx) {
   ctx.fillStyle = '#2a2f36'; rr(X(-5.5), Y(5.5), 11 * u, 4.8 * u, 1.2 * u); ctx.fill();
   if (fx.hurt || fx.ko) { ctx.fillStyle = '#5a0b12'; rr(X(-3.5), Y(6.3), 7 * u, 3.2 * u, 1 * u); ctx.fill(); }
   else { ctx.strokeStyle = F.skin; ctx.lineWidth = 0.6 * u; for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(X(i * 2), Y(5.8)); ctx.lineTo(X(i * 2), Y(10)); ctx.stroke(); } }
-  if (fx.cap === 'piluso') drawPiluso(cx, hy - 1 * u, u);
+  if (HATS[fx.cap]) drawCap(fx.cap, cx, hy - 1 * u, u);
   ctx.restore();
 }
 function drawStars(x, y, u, now) {
@@ -1837,7 +2149,7 @@ function drawCookie(F, cx, hy, u, botY, fx) {
   ctx.strokeStyle = ICE; ctx.lineWidth = 1.1 * u;
   if (fx.hurt || fx.ko) { ctx.beginPath(); ctx.ellipse(cx, Y(7.5), 2 * u, 2.6 * u, 0, 0, Math.PI * 2); ctx.stroke(); }
   else { ctx.beginPath(); ctx.moveTo(X(-4.5), Y(5)); ctx.quadraticCurveTo(cx, Y(9.8), X(4.5), Y(5)); ctx.stroke(); }
-  if (fx.cap === 'piluso') drawPiluso(cx, hy, u);
+  if (HATS[fx.cap]) drawCap(fx.cap, cx, hy, u);
   ctx.restore();
 }
 
@@ -1848,17 +2160,17 @@ function paintPortrait(cvs, ch) {
   ctx.fillStyle = '#070405'; ctx.fillRect(0, 0, w, h);
   const g = ctx.createRadialGradient(w / 2, h * 0.45, 0, w / 2, h * 0.45, h * 0.9);
   g.addColorStop(0, 'rgba(238,22,30,0.7)'); g.addColorStop(1, 'rgba(120,0,10,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-  const top = FIGHTERS[ch] && FIGHTERS[ch].hat === 'bicorne' ? 34 : 23, u = h / (top + 26);
+  const big = cvs.id === 'cPrev', top = big || (FIGHTERS[ch] && FIGHTERS[ch].hat === 'bicorne') ? 34 : 23, u = Math.min(h / (top + (big ? 32 : 26)), w / 34);
   drawBust(ch, w / 2, top * u + 1, u, h + 4, { cheek: [0, 0] });
   ctx = main;
 }
 function paintPortraits() { document.querySelectorAll('.fighter').forEach(b => paintPortrait(b.querySelector('canvas'), b.dataset.ch)); }
 
 function drawOpponent(now) {
-  const u = unit(), o = st.opp, F = look(o.ch, o.gl);
+  const u = unit(), o = st.opp, F = look(o.ch, o.gl, o.sk);
   oppDV += ((o.d ? 1 : 0) - oppDV) * 0.4;
   oppGV += ((o.g ? 1 : 0) - oppGV) * 0.55;
-  const ko = st.phase === 'over' && st.result === true;
+  const ko = (st.phase === 'over' || st.phase === 'ko') && st.result === true;
   const bob = reduce ? 0 : Math.sin(now / 430) * 0.9 * u;
   const hurtT = now - st.oppHurtAt;
   const hx = (hurtT < 320 && !reduce) ? Math.sin(hurtT / 18) * (1 - hurtT / 320) * 3.2 * u : 0;
@@ -1869,7 +2181,7 @@ function drawOpponent(now) {
   ctx.translate(-W / 2, -H - oppDV * 5 * u);
   const cx = W / 2 + hx, hy = sy(0.36) + bob;
   st.oppCheek[0] *= 0.9985; st.oppCheek[1] *= 0.9985;
-  drawBust(o.ch, cx, hy, u, H + 20, { hurt: hurtT < 420, ko, cheek: st.oppCheek, cap: o.ht, t: now });
+  drawBust(o.ch, cx, hy, u, H + 20, { hurt: hurtT < 420, ko, cheek: st.oppCheek, cap: o.ht, shirt: o.sh, skin: o.sk, t: now });
   if (now < st.oppStunUntil) drawStars(cx, hy - 21 * u, u, now);
   const busy = new Set(st.incoming.map(a => a.hand));
   for (const sg of [1, -1]) {
@@ -1899,12 +2211,12 @@ function drawIncoming(now) {
     const t = now - a.t0, sg = a.hand === 'L' ? 1 : -1;
     const p = t / a.wu;
     if (p > 0.6 && p < 1 && !reduce) {
-      for (const [dt, al] of [[50, 0.18], [25, 0.32]]) { const G = incomingPose(a, t - dt); drawHand(G.x, G.y, G.s, G.r, sg < 0, al, { f: look(st.opp.ch, st.opp.gl) }); }
+      for (const [dt, al] of [[50, 0.18], [25, 0.32]]) { const G = incomingPose(a, t - dt); drawHand(G.x, G.y, G.s, G.r, sg < 0, al, { f: look(st.opp.ch, st.opp.gl, st.opp.sk) }); }
     }
     const P = incomingPose(a, t); P.s *= a.big || 1;
     let al = 1;
     if (p >= 1 && (a.res === 'hit' || a.res === 'break')) { const q = (t - a.wu) / 450; al = q < 0.15 ? 0 : 1; }
-    drawHand(P.x, P.y, P.s, P.r, sg < 0, al, { f: look(st.opp.ch, st.opp.gl) });
+    drawHand(P.x, P.y, P.s, P.r, sg < 0, al, { f: look(st.opp.ch, st.opp.gl, st.opp.sk) });
   }
 }
 
@@ -1930,10 +2242,10 @@ function drawMyHands(now) {
     for (const s of st.mySlaps) if (s.hand === hand && now < s.t0 + slapBack(s) + RETURN_MS) sl = s;
     if (sl && !reduce) {
       const p = (now - sl.t0) / sl.wu;
-      if (p > 0.08 && p < 1) for (const [dt, al] of [[44, 0.16], [22, 0.3]]) { const G = myPose(side, now - dt, sl); drawHand(G.x, G.y, G.s, G.r, side > 0, al, { f: look(st.ch, prog.gl) }); }
+      if (p > 0.08 && p < 1) for (const [dt, al] of [[44, 0.16], [22, 0.3]]) { const G = myPose(side, now - dt, sl); drawHand(G.x, G.y, G.s, G.r, side > 0, al, { f: look(st.ch, prog.gl, mySkin()) }); }
     }
     const P = myPose(side, now, sl);
-    drawHand(P.x, P.y, P.s, P.r, side > 0, 1, { f: look(st.ch, prog.gl) });
+    drawHand(P.x, P.y, P.s, P.r, side > 0, 1, { f: look(st.ch, prog.gl, mySkin()) });
   }
 }
 
@@ -1975,6 +2287,14 @@ function drawFx(now) {
       const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.7);
       g.addColorStop(0, 'rgba(225,15,26,0)'); g.addColorStop(1, 'rgba(225,15,26,' + (0.55 * a).toFixed(3) + ')');
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      if (f.type === 'finIn' && t <= f.wu + 120) {
+        // aro que se achica: cubrite cuando llega al centro
+        const k = clamp(t / f.wu, 0, 1), cx2 = W / 2, cy2 = H * 0.46, r0 = 9 * u, inWin = t >= f.wu - FIN_WIN && t <= f.wu + 90;
+        ctx.save(); ctx.lineWidth = 1.4 * u; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(cx2, cy2, r0, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 2.4 * u; ctx.strokeStyle = inWin ? '#35c26f' : C.slap; ctx.beginPath(); ctx.arc(cx2, cy2, r0 + (1 - k) * 42 * u, 0, Math.PI * 2); ctx.stroke();
+        ctx.font = (4.2 * u) + 'px ' + DISPLAY; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = inWin ? '#35c26f' : C.paper;
+        ctx.fillText(inWin ? '¡CUBRITE!' : 'ESPERÁ…', cx2, cy2); ctx.restore();
+      }
     } else if (f.type === 'shield' && now < st.shieldUntil) {
       ctx.save(); ctx.strokeStyle = 'rgba(111,208,255,' + (0.35 + 0.2 * Math.sin(now / 120)).toFixed(3) + ')'; ctx.lineWidth = 6 * u; ctx.strokeRect(0, 0, W, H); ctx.restore();
     } else if (f.type === 'smoke' && st.smokeN > 0) {
@@ -2048,7 +2368,7 @@ function draw(now) {
 }
 
 /* ---------------- UI ---------------- */
-const SCREENS = ['menu', 'wait', 'over', 'pass', 'tour'];
+const SCREENS = ['menu', 'wait', 'over', 'pass', 'tour', 'create'];
 function showScreen(name) { SCREENS.forEach(s => $(s).hidden = s !== name); }
 function setBusy(b) { $('bCreate').disabled = b || roomState !== 'ok'; $('bJoin').disabled = b || roomState !== 'ok'; }
 function renderMenu() {
@@ -2063,18 +2383,54 @@ function buildPicker() {
   const box = $('pick'); box.textContent = '';
   for (const ch of ORDER) {
     const F = FIGHTERS[ch], ok = owns(ch), b = document.createElement('button');
-    b.type = 'button'; b.className = 'fighter' + (ok ? '' : ' locked'); b.dataset.ch = ch;
+    const isNewCustom = ch === 'custom' && !prog.custom;
+    b.type = 'button'; b.className = 'fighter' + (ok || isNewCustom ? '' : ' locked') + (isNewCustom ? ' create' : ''); b.dataset.ch = ch;
     b.setAttribute('aria-pressed', String(ch === st.ch));
     const c = document.createElement('canvas'); c.setAttribute('aria-hidden', 'true');
-    const n = document.createElement('span'); n.textContent = F.nick;
+    const n = document.createElement('span'); n.textContent = isNewCustom ? '+ Crear' : F.nick;
+    if (n.textContent.length > 9) n.style.fontSize = '12px';
     b.append(c, n);
-    const r = document.createElement('small'); r.textContent = ok ? F.power[0] + ' · ' + F.sp[1] : reqText(ch); b.append(r);
-    b.addEventListener('click', () => { audio(); if (!owns(ch)) { toast(F.nick + ': ' + reqText(ch).toLowerCase() + ' para desbloquearlo. Poder: ' + F.power[0] + '.'); return; } pick(ch); });
+    const r = document.createElement('small');
+    r.textContent = isNewCustom ? 'Armá tu propio peleador' : ok ? 'Nv ' + flLevel(ch) + ' · ' + F.sp[1] : reqText(ch);
+    b.append(r);
+    b.addEventListener('click', () => {
+      audio();
+      if (ch === 'custom' && !prog.custom) { openCreator(); return; }
+      if (!owns(ch)) { toast(F.nick + ': ' + reqText(ch).toLowerCase() + ' para desbloquearlo. Poder: ' + F.sp[1] + '.'); return; }
+      pick(ch);
+    });
     box.append(b);
   }
-  paintPortraits(); showPow();
+  paintPortraits(); renderFighterInfo();
 }
-function showPow() { const F = FIGHTERS[st.ch]; $('pickPow').textContent = F.nick + ' · Habilidad: ' + F.power[0] + '. ' + F.power[1] + ' Poder (botón Poder): ' + F.sp[1] + ', ' + SPECIALS[F.sp[0]].desc + '.'; }
+// Debajo del selector: habilidad, poder, nivel del peleador y sus skins.
+function renderFighterInfo() {
+  const box = $('fInfo'); if (!box) return;
+  box.textContent = '';
+  const ch = st.ch, F = FIGHTERS[ch], lv = flLevel(ch), w = flWins(ch);
+  const p = document.createElement('p'); p.className = 'note';
+  const b = document.createElement('b'); b.textContent = F.nick;
+  p.append(b, ' · Habilidad: ' + F.power[0] + '. ' + F.power[1] + ' Poder (botón Poder): ' + F.sp[1] + ', ' + SPECIALS[F.sp[0]].desc + '.');
+  const lvP = document.createElement('p'); lvP.className = 'note';
+  lvP.textContent = 'Nivel ' + lv + ' con este peleador · ' + w + (w === 1 ? ' victoria' : ' victorias') +
+    (lv < FLV.length ? ' · con ' + (FLV[lv] - w) + ' más llega al nivel ' + (lv + 1) + ': ' + FL_PERKS[lv].toLowerCase() + '.' : ' · nivel máximo.');
+  const bar = document.createElement('div'); bar.className = 'bar';
+  const fill = document.createElement('i'); fill.style.width = (lv >= FLV.length ? 100 : (w - FLV[lv - 1]) / (FLV[lv] - FLV[lv - 1]) * 100) + '%'; bar.append(fill);
+  const sk = document.createElement('div'); sk.className = 'gl';
+  [['', 'Original', 1]].concat(Object.keys(SKINS).map(k => [k, SKINS[k].name, SKINS[k].lv])).forEach(([k, name, need]) => {
+    const btn = document.createElement('button'); btn.type = 'button';
+    btn.textContent = lv >= need ? name : name + ' · Nv ' + need; btn.disabled = lv < need;
+    btn.setAttribute('aria-pressed', String((prog.skin[ch] || '') === k));
+    btn.addEventListener('click', () => { prog.skin[ch] = k; saveProg(); renderFighterInfo(); });
+    sk.append(btn);
+  });
+  box.append(p, lvP, bar, sk);
+  if (ch === 'custom' && prog.custom) {
+    const e = document.createElement('button'); e.type = 'button'; e.className = 'btn ghost'; e.textContent = 'Editar mi personaje';
+    e.addEventListener('click', openCreator); box.append(e);
+  }
+}
+
 function renderPass() {
   const lv = passLevel(prog.xp), max = PASS.length, into = lv >= max ? XP_LEVEL : prog.xp - lv * XP_LEVEL;
   $('pLvl').textContent = lv;
@@ -2089,10 +2445,33 @@ function renderPass() {
     if (r.glove) { const sw = document.createElement('i'); sw.className = 'sw'; sw.style.background = GLOVES[r.glove].glove; t.append(sw, 'Guantes ' + GLOVES[r.glove].name); }
     else if (r.title) t.textContent = 'Título: ' + r.title;
     else if (r.hat) t.textContent = 'Gorro ' + HATS[r.hat].name;
+    else if (r.chest) t.textContent = r.chest === 'e' ? 'Cofre épico' : 'Cofre común';
+    else if (r.pick) t.textContent = 'Camiseta a elección';
     else t.textContent = 'Personaje: ' + FIGHTERS[r.ch].nick;
     const sEl = document.createElement('span'); sEl.className = 'st'; sEl.textContent = got ? 'Conseguido' : (i === lv ? 'Siguiente' : '');
     li.append(n, t, sEl); tr.append(li);
   });
+  // cofres
+  const cb = $('pChests'); cb.textContent = '';
+  [['c', 'Cofre común', prog.chests, '1 premio'], ['e', 'Cofre épico', prog.epics, '3 premios']].forEach(([k, name, count, what]) => {
+    const d = document.createElement('div'); d.className = 'chest' + (k === 'e' ? ' epic' : '');
+    const bx = document.createElement('i'); bx.className = 'box';
+    const tt = document.createElement('b'); tt.textContent = name + ' ×' + count;
+    const sm = document.createElement('small'); sm.textContent = what;
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn' + (count ? ' hot' : ' ghost'); btn.textContent = 'Abrir'; btn.disabled = !count;
+    btn.addEventListener('click', () => {
+      audio(); const got = openChest(k); if (!got) return;
+      const o = $('pOpen'); o.hidden = false; o.textContent = '';
+      const h = document.createElement('b'); h.textContent = name + ': ¡te tocó!'; o.append(h);
+      got.forEach(g => { const l = document.createElement('span'); l.textContent = g; o.append(l); });
+      o.classList.remove('pop'); void o.offsetWidth; o.classList.add('pop');
+      renderPass();
+    });
+    d.append(bx, tt, sm, btn); cb.append(d);
+  });
+  const nx = document.createElement('p'); nx.className = 'note'; nx.style.gridColumn = '1 / -1';
+  nx.textContent = 'Cada 3 victorias online o en el torneo ganás un cofre común. Subir de nivel un peleador también da uno, y ganar un torneo da uno épico. Próximo: ' + prog.chestProg + ' / 3.';
+  cb.append(nx);
   const cl = $('pChal'); cl.textContent = '';
   for (const c of CHALLENGES) {
     const have = progVal(c.key), done = !!prog.chars[c.ch], li = document.createElement('li');
@@ -2117,6 +2496,86 @@ function renderPass() {
     b.addEventListener('click', () => { prog.hat = k; saveProg(); renderPass(); });
     hb.append(b);
   });
+  const owned = Object.keys(SHIRTS).filter(k => prog.shirts[k]).length;
+  $('pShirtLab').textContent = 'Tu camiseta · tenés ' + owned + ' de ' + Object.keys(SHIRTS).length + (prog.picks ? ' · te quedan ' + prog.picks + ' a elección' : '');
+  const sb = $('pShirts'); sb.textContent = '';
+  [['', 'La del personaje']].concat(Object.keys(SHIRTS).map(k => [k, SHIRTS[k].name])).forEach(([k, name]) => {
+    const b = document.createElement('button'); b.type = 'button';
+    const have = !k || prog.shirts[k];
+    if (k) { const sw = document.createElement('i'); sw.className = 'sw'; sw.style.background = shirtCss(SHIRTS[k]); b.append(sw); }
+    b.append(have || !prog.picks ? name : name + ' · elegir');
+    b.disabled = !have && !prog.picks; b.setAttribute('aria-pressed', String(prog.sh === k));
+    b.addEventListener('click', () => {
+      if (!have) { prog.picks--; prog.shirts[k] = 1; toast('Camiseta ' + name + ' desbloqueada.'); }
+      prog.sh = k; saveProg(); renderPass();
+    });
+    sb.append(b);
+  });
+}
+// Cofres: premios al azar entre lo que todavía no tenés (camisetas, guantes y gorros) más algo de XP.
+function openChest(kind) {
+  if (kind === 'e' ? prog.epics < 1 : prog.chests < 1) return null;
+  if (kind === 'e') prog.epics--; else prog.chests--;
+  prog.opened++;
+  const pool = [];
+  Object.keys(SHIRTS).forEach(k => { if (!prog.shirts[k]) pool.push(['shirt', k], ['shirt', k]); });
+  Object.keys(GLOVES).forEach(k => { if (!prog.gloves[k]) pool.push(['glove', k]); });
+  Object.keys(HATS).forEach(k => { if (!prog.hats[k]) pool.push(['hat', k]); });
+  const got = [], n = kind === 'e' ? 3 : 1;
+  for (let i = 0; i < n; i++) {
+    if (!pool.length) { prog.xp += 60; got.push('+60 XP'); continue; }
+    const [t, k] = pool[Math.floor(Math.random() * pool.length)];
+    for (let x = pool.length - 1; x >= 0; x--) if (pool[x][0] === t && pool[x][1] === k) pool.splice(x, 1);
+    if (t === 'shirt') { prog.shirts[k] = 1; got.push('Camiseta ' + SHIRTS[k].name); }
+    if (t === 'glove') { prog.gloves[k] = 1; got.push('Guantes ' + GLOVES[k].name); }
+    if (t === 'hat') { prog.hats[k] = 1; got.push('Gorro ' + HATS[k].name); }
+  }
+  const bonus = kind === 'e' ? 80 : 30; prog.xp += bonus; got.push('+' + bonus + ' XP');
+  claimPass(got); checkUnlocks(got); saveProg();
+  return got;
+}
+
+/* ---- creador de personaje ---- */
+let draft = null;
+function openCreator() {
+  draft = cleanCustom(prog.custom || {}) ; if (!prog.custom) draft.n = '';
+  $('cName').value = prog.custom ? prog.custom.n : '';
+  showScreen('create'); renderCreator();
+}
+function renderCreator() {
+  FIGHTERS.preview = buildCustom(Object.assign({}, draft, { n: draft.n || 'MI PELEADOR' }));
+  paintPortrait($('cPrev'), 'preview');
+  const box = $('cOpts'); box.textContent = '';
+  const group = (title, key, items, color) => {
+    const lab = document.createElement('span'); lab.className = 'lab'; lab.textContent = title;
+    const row = document.createElement('div'); row.className = 'gl';
+    items.forEach((it, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(draft[key] === i));
+      if (color) { const sw = document.createElement('i'); sw.className = 'sw'; sw.style.background = it; b.append(sw); b.setAttribute('aria-label', title + ' ' + (i + 1)); }
+      else b.textContent = it;
+      b.addEventListener('click', () => { draft[key] = i; renderCreator(); });
+      row.append(b);
+    });
+    box.append(lab, row);
+  };
+  group('Piel', 'sk', CU.sk, true);
+  group('Pelo', 'hs', CU.hs.map(x => x[1]));
+  group('Color de pelo', 'hc', CU.hc, true);
+  group('Barba', 'bd', CU.bd.map(x => x[1]));
+  group('Cejas', 'br', CU.br.map(x => x[1]));
+  group('Ropa', 'of', CU.of.map(x => x[1]));
+  group('En la cabeza', 'ht', CU.ht.map(x => x[1]));
+  group('Habilidad', 'ps', CU.ps.map(x => x[1]));
+  group('Poder', 'sp', CU.sp.map(x => SPECIALS[x].name));
+  const F = FIGHTERS.preview;
+  $('cDesc').textContent = 'Habilidad: ' + F.power[0] + '. ' + F.power[1] + ' Poder: ' + F.sp[1] + ', ' + SPECIALS[F.sp[0]].desc + '.';
+}
+function saveCreator() {
+  draft.n = $('cName').value;
+  prog.custom = cleanCustom(draft); saveProg();
+  FIGHTERS.custom = buildCustom(prog.custom); lookCache = {};
+  showScreen('menu'); pick('custom'); renderMenu();
+  toast(FIGHTERS.custom.nick + ' está listo para pelear.');
 }
 function tiles(code) { const box = $('wTiles'); box.textContent = ''; for (const ch of code) { const s = document.createElement('span'); s.textContent = ch; box.appendChild(s); } }
 function renderWait() {
@@ -2126,10 +2585,10 @@ function renderWait() {
   st.peers.forEach(p => {
     const li = document.createElement('li');
     const name = p.me ? (st.name || 'Jugador') : cleanName(p.P.nm);
-    const ch = p.me ? st.ch : (FIGHTERS[p.P.ch] ? p.P.ch : 'a');
+    const nick = p.me ? FIGHTERS[st.ch].nick : chNick(p.P);
     const tt = p.me ? myTitle() : (typeof p.P.tt === 'string' ? p.P.tt.slice(0, 30) : '');
     const a = document.createElement('span'), b = document.createElement('b'), sm = document.createElement('small');
-    b.textContent = name; sm.textContent = FIGHTERS[ch].nick + (tt ? ' · ' + tt : ''); a.append(b, sm);
+    b.textContent = name; sm.textContent = nick + (tt ? ' · ' + tt : ''); a.append(b, sm);
     const tag = document.createElement('em'); tag.textContent = [p.id === st.hostId ? 'Anfitrión' : '', p.me ? 'Vos' : ''].filter(Boolean).join(' · ');
     li.append(a, tag); if (p.me) li.className = 'me'; list.append(li);
   });
@@ -2189,7 +2648,7 @@ function renderTour() {
     const side = id => {
       const P = presOf(id), ch = (T.ch && T.ch[id]) || 'a', s = document.createElement('span'), b = document.createElement('b'), sm = document.createElement('small');
       b.textContent = nm(id);
-      sm.textContent = m.w ? (winnerOf(m) === id ? 'Ganó' : 'Perdió') : '♥ ' + (P && P.rd === m.q ? Math.max(0, num(P.hp, 0)) : maxHp(ch) + (m.hb === id ? 1 : 0)) + ' · ' + FIGHTERS[ch].nick;
+      sm.textContent = m.w ? (winnerOf(m) === id ? 'Ganó' : 'Perdió') : '♥ ' + (P && P.rd === m.q ? Math.max(0, num(P.hp, 0)) : maxHp(ch) + (m.hb === id ? 1 : 0)) + ' · ' + ((T.nk && T.nk[id]) || FIGHTERS[ch].nick);
       s.append(b, sm); return s;
     };
     const v = document.createElement('i'); v.textContent = 'vs';
@@ -2264,8 +2723,9 @@ let hudKey = '', padKey = '', enKey = '';
 const EL = { pL: $('pL'), pR: $('pR'), pDodge: $('pDodge'), pPow: $('pPow'), pFin: $('pFin') }, hid = {};
 function setHidden(id, v) { if (hid[id] !== v) { hid[id] = v; $(id).hidden = v; } }
 function updateUI(now) {
-  const playing = st.phase === 'countdown' || st.phase === 'fight' || st.phase === 'over';
-  setHidden('hud', !playing); setHidden('pad', !(st.phase === 'countdown' || st.phase === 'fight')); setHidden('pad2', !(st.phase === 'countdown' || st.phase === 'fight'));
+  const playing = st.phase === 'countdown' || st.phase === 'fight' || st.phase === 'over' || st.phase === 'ko';
+  setHidden('hud', !playing); const padOn = st.phase === 'countdown' || st.phase === 'fight' || st.phase === 'ko';
+  setHidden('pad', !padOn); setHidden('pad2', !padOn);
   if (playing) {
     const key = [st.hp, st.bb, st.opp.hp, st.opp.bb, st.round, st.opp.name, st.name, st.mode, st.tour ? st.tour.stage : -1, st.ch, st.opp.ch, st.T ? st.T.mode : ''].join('|');
     if (key !== hudKey) {
@@ -2306,7 +2766,7 @@ function pick(ch) {
   st.ch = owns(ch) ? ch : 'a';
   document.querySelectorAll('.fighter').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ch === st.ch)));
   try { localStorage.setItem('cachetazo-ch', st.ch); } catch (e) {}
-  if ($('pickPow')) showPow();
+  if ($('fInfo')) { document.querySelectorAll('.fighter').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ch === st.ch))); renderFighterInfo(); }
 }
 { let saved = 'a'; try { saved = localStorage.getItem('cachetazo-ch') || 'a'; } catch (e) {} pick(saved); }
 $('codeIn').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); });
@@ -2322,6 +2782,9 @@ $('bBot').addEventListener('click', () => { audio(); st.tour = null; startBot();
 $('bTour').addEventListener('click', () => { audio(); st.tour = { stage: 0 }; startBot(); });
 $('bPass').addEventListener('click', () => { renderPass(); showScreen('pass'); });
 $('bPassBack').addEventListener('click', () => { showScreen('menu'); renderMenu(); });
+$('bCSave').addEventListener('click', saveCreator);
+$('bCBack').addEventListener('click', () => { showScreen('menu'); renderMenu(); });
+$('cName').addEventListener('input', e => { draft.n = e.target.value; });
 $('bStart').addEventListener('click', () => { audio(); if (st.isHost) startTournament(st.selMode); });
 $('bRematch').addEventListener('click', () => { audio(); requestRematch(); });
 $('bLobby').addEventListener('click', () => { if (!st.isHost) return; st.T = null; pubT(); st.phase = 'waiting'; showScreen('wait'); renderWait(); });
@@ -2356,7 +2819,7 @@ const K_L = ['a', 'arrowleft'], K_R = ['d', 'arrowright'], K_D = ['s', 'arrowdow
 addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return;
   const k = e.key.toLowerCase();
-  if (st.phase !== 'fight' && st.phase !== 'countdown') return;
+  if (st.phase !== 'fight' && st.phase !== 'countdown' && st.phase !== 'ko') return;
   if (K_L.includes(k)) { e.preventDefault(); if (!e.repeat) trySlap('L'); }
   else if (K_R.includes(k)) { e.preventDefault(); if (!e.repeat) trySlap('R'); }
   else if (K_D.includes(k)) { e.preventDefault(); if (!e.repeat) dodge(); }
@@ -2387,6 +2850,7 @@ function frame() {
 }
 addEventListener('resize', () => { resize(); paintPortraits(); }); resize(); paintPortraits();
 if (document.fonts && document.fonts.load) document.fonts.load('40px "Anton"').then(buildBg).catch(() => {});
+{ const g = []; claimPass(g); checkUnlocks(g); saveProg(); }
 renderMenu();
 requestAnimationFrame(frame);
 })();
